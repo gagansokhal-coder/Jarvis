@@ -1,4 +1,4 @@
-# 🧠 JARVIS PROJECT — AGENT MEMORY & HANDOFF FILE
+# 🧠 GAGAN AI (GAGAN RAJPUT) — AGENT MEMORY & HANDOFF FILE
 
 > **READ THIS FIRST.** This file is the single source of truth for any AI agent
 > continuing work on this project. It tells you where we stopped, what's done,
@@ -10,13 +10,14 @@
 
 | Field | Value |
 |---|---|
-| **Project Name** | Personal JARVIS AI Assistant |
+| **Assistant Name** | **Gagan** (or **Gagan Rajput**) |
+| **Wake Word** | **"Hey Gagan"** |
 | **Workspace** | `d:\Desktop\gaganAI` |
-| **Owner** | Gagan Rajput, B.Tech CSE, NIT Jalandhar |
+| **Owner / Creator** | Gagan Rajput, B.Tech CSE, NIT Jalandhar |
 | **OS** | Windows 11 |
 | **Hardware** | Intel i7 11th Gen, 16 GB RAM, 512 GB SSD, NO GPU |
 | **Budget** | ₹0 recurring/month |
-| **Goal** | Most capable personal AI assistant with zero cost |
+| **Goal** | The most capable personal AI assistant named Gagan with zero cost |
 
 ---
 
@@ -175,18 +176,18 @@ d:\Desktop\gaganAI\
 ## 📊 PROGRESS TRACKER
 
 ### Phase 1: Foundation
-- [ ] Install Node.js 20 LTS
-- [ ] Install Docker Desktop
-- [ ] Install Ollama
-- [ ] Pull Qwen 2.5 7B model
-- [ ] Pull Phi-4-mini model
+- [x] Install Node.js 20 LTS
+- [x] Install Docker Desktop
+- [x] Install Ollama
+- [x] Pull Qwen 2.5 7B model
+- [x] Pull Phi-4-mini model
 - [ ] Clone & configure OpenClaw
 - [ ] Connect OpenClaw to Ollama
 - [ ] Configure Telegram bot channel
 - [ ] Test basic chat via Telegram
-- [ ] Configure Gemini & Groq fallbacks
+- [x] Configure Gemini & Groq fallbacks
 - [ ] Test tiered model routing
-- [ ] Create .gitignore
+- [x] Create .gitignore
 
 ### Phase 2: Productivity
 - [ ] Create Google Cloud project
