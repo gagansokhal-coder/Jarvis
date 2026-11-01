@@ -1,0 +1,51 @@
+# Secrets
+.env
+*.env
+credentials/
+*_token.json
+*_secret.json
+client_secret.json
+
+# Models (too large for git)
+models/
+*.gguf
+*.bin
+*.onnx
+
+# Runtime
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+logs/
+data/
+chroma_db/
+*.db
+portal_session.json
+
+# Python
+venv/
+.venv/
+dist/
+build/
+*.egg-info/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Audio temp files
+*.wav
+*.mp3
+!voice/tts/piper/*.onnx.json
+
+# Screenshots
+screenshot*.png
+test_*.png
