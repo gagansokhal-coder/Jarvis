@@ -12,8 +12,7 @@
     "entries": {
       "gagan": {
         "name": "Gagan",
-        "description": "Personal AI Assistant for Gagan Rajput",
-        "default": true
+        "description": "Personal AI Assistant for Gagan Rajput"
       }
     }
   },
