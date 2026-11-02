@@ -28,7 +28,7 @@ if (Test-Path $envFile) {
 $env:OPENCLAW_CONFIG_PATH = Join-Path $WorkspaceRoot "config\openclaw.json"
 $env:OPENCLAW_STATE_DIR = Join-Path $WorkspaceRoot "data"
 $env:OPENCLAW_HOME = $WorkspaceRoot
-$env:OPENCLAW_WORKSPACE_DIR = $WorkspaceRoot
+$env:OPENCLAW_WORKSPACE_DIR = Join-Path $WorkspaceRoot "data\workspace"
 
 # OpenClaw stages private SQLite read snapshots in its cache directory.
 $cacheDir = Join-Path $WorkspaceRoot "data\cache"

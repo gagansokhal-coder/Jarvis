@@ -4,32 +4,32 @@
       "ollama": {
         "baseUrl": "http://127.0.0.1:11434",
         "api": "ollama",
-        "maxTokens": 512,
+        "maxTokens": 256,
         "models": [
           {
             "id": "phi4-mini:latest",
             "name": "Phi-4 Mini (local)",
-            "contextWindow": 16384,
-            "contextTokens": 16384,
-            "maxTokens": 512,
+            "contextWindow": 4096,
+            "contextTokens": 4096,
+            "maxTokens": 256,
             "params": {
-              "num_ctx": 16384,
-              "num_predict": 512,
+              "num_ctx": 4096,
+              "num_predict": 256,
               "num_thread": 8,
-              "keep_alive": "30m"
+              "keep_alive": "60m"
             }
           },
           {
             "id": "qwen2.5:7b",
             "name": "Qwen 2.5 7B (local)",
-            "contextWindow": 16384,
-            "contextTokens": 16384,
-            "maxTokens": 512,
+            "contextWindow": 4096,
+            "contextTokens": 4096,
+            "maxTokens": 256,
             "params": {
-              "num_ctx": 16384,
-              "num_predict": 512,
+              "num_ctx": 4096,
+              "num_predict": 256,
               "num_thread": 8,
-              "keep_alive": "30m"
+              "keep_alive": "60m"
             }
           }
         ]
@@ -37,10 +37,15 @@
     }
   },
   "tools": {
-    "profile": "messaging"
+    "profile": "minimal"
   },
   "agents": {
     "defaults": {
+      "workspace": "data/workspace",
+      "contextInjection": "never",
+      "bootstrapMaxChars": 400,
+      "bootstrapTotalMaxChars": 1000,
+      "thinkingDefault": "off",
       "model": {
         "primary": "ollama/phi4-mini:latest",
         "fallbacks": [
