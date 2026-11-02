@@ -37,6 +37,12 @@ if (-not (Test-Path $cacheDir)) {
 }
 $env:XDG_CACHE_HOME = $cacheDir
 
+# Ensure logs directory exists
+$logDir = Join-Path $WorkspaceRoot "logs"
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+
 # 3. Resolve Node and OpenClaw JS paths
 $npmPrefix = (npm prefix -g).Trim()
 $openclawMjs = Join-Path $npmPrefix "node_modules\openclaw\openclaw.mjs"
@@ -51,7 +57,13 @@ try {
     Start-Sleep -Seconds 3
 }
 
-# 5. Validate OpenClaw configuration
+# 5. Clean up any stale lock files before starting
+$lock1 = Join-Path $WorkspaceRoot "data\tmp\openclaw\gateway.state.lock"
+$lock2 = Join-Path $WorkspaceRoot "data\state\openclaw.sqlite.cron-authority.lock"
+if (Test-Path $lock1) { Remove-Item -Path $lock1 -Force -ErrorAction SilentlyContinue }
+if (Test-Path $lock2) { Remove-Item -Path $lock2 -Force -ErrorAction SilentlyContinue }
+
+# 6. Validate OpenClaw configuration
 Write-Host "[INFO] Validating OpenClaw configuration..." -ForegroundColor Cyan
 & node $openclawMjs config validate
 if ($LASTEXITCODE -ne 0) {
@@ -60,6 +72,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "[OK] Configuration valid!" -ForegroundColor Green
 
-# 6. Launch Gateway
+# 7. Launch Gateway with live logging to logs\gateway.log
 Write-Host "[INFO] Launching OpenClaw Gateway on Telegram..." -ForegroundColor Cyan
-& node $openclawMjs gateway run
+$logFile = Join-Path $logDir "gateway.log"
+& node $openclawMjs gateway run *>> $logFile
