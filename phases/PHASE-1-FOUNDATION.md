@@ -24,7 +24,7 @@ via Telegram that runs entirely on your laptop.
 - [x] Windows 11 machine with 16 GB RAM
 - [x] `.env` file with API keys (Telegram, Gemini, Groq, Cloudflare)
 - [x] GitHub Student Pack active
-- [ ] Stable internet connection for initial downloads (~5 GB total)
+- [x] Stable internet connection for initial downloads (~5 GB total)
 
 ---
 

@@ -28,14 +28,14 @@
 | **Strategy Document** | ✅ COMPLETE — `JARVIS-AI-Strategy.md` |
 | **Phase Plans** | ✅ COMPLETE — `phases/PHASE-*.md` |
 | **Environment Keys** | ✅ READY — `.env` file has all API keys |
-| **Phase 1: Foundation** | ✅ COMPLETE |
+| **Phase 1: Foundation** | ✅ COMPLETE — Telegram live & verified on Phi-4 Mini |
 | **Phase 2: Productivity** | 🔲 NOT STARTED |
 | **Phase 3: Voice** | 🔲 NOT STARTED |
 | **Phase 4: Automation** | 🔲 NOT STARTED |
 | **Phase 5: Polish** | 🔲 NOT STARTED |
 
-> **LAST UPDATED:** 2026-11-02T14:41:00+05:30
-> **LAST AGENT ACTION:** Completed Phase 1 Foundation: OpenClaw Gateway is live and polling on Telegram (@GaganjiBot) backed by local Ollama Qwen 2.5 7B with Groq & Gemini fallbacks. All configuration fully sandboxed in workspace.
+> **LAST UPDATED:** 2026-11-02T16:48:00+05:30
+> **LAST AGENT ACTION:** Completed Phase 1 Foundation. Configured `ollama/phi4-mini:latest` as primary model for fast daily tasks on CPU, `ollama/qwen2.5:7b` as first fallback, followed by Groq and Gemini cloud APIs. Configured `tools.profile: "messaging"` to prevent tool-prompt bloat and context overflow. Wiped clogged SQLite sessions and verified live Telegram messaging end-to-end: inbound message received from Gagan (`7845751251`) and outbound reply delivered successfully.
 
 ---
 
@@ -73,10 +73,10 @@ but lacks native messaging app and email integrations.
 
 ```
 User request → Router
-  ├─ Simple/fast tasks → Phi-4-mini (3.8B, local, ~30 tok/s)
-  ├─ Complex reasoning → Qwen 2.5 7B (local, ~10 tok/s)
-  ├─ Heavy/long tasks  → Groq API (Llama 70B, free, cloud speed)
-  └─ Fallback          → Gemini Flash API (free)
+  ├─ Primary daily chat → Phi-4-mini (3.8B, local Ollama, ~3.7s CPU)
+  ├─ Complex reasoning  → Qwen 2.5 7B (local Ollama, ~23s CPU)
+  ├─ Heavy cloud task   → Groq API (openai/gpt-oss-120b, cloud speed)
+  └─ Cloud fallback     → Gemini Flash API (free)
 ```
 
 ### Voice Pipeline
@@ -163,8 +163,8 @@ d:\Desktop\gaganAI\
 1. **NEVER commit `.env` to git** — it contains live API tokens
 2. **NEVER expose Ollama on 0.0.0.0** — always localhost:11434
 3. **NEVER send private emails through Gemini free tier** — it trains on your data
-4. **Use local Ollama for ALL private data** (emails, passwords, personal info)
-5. **Set Ollama `num_ctx: 4096`** — saves ~3 GB RAM vs default 32K
+4. **Do not send passwords, recovery codes, or sensitive personal data to Telegram while Groq is primary** — cloud routing is enabled for responsive replies
+5. **Set Ollama `num_ctx: 16384`** — OpenClaw's agent/tool prompt needs more than the previous 4K local context
 6. **Use Q4_K_M quantization** — best quality/size ratio for 16 GB RAM
 7. **Close Chrome during heavy LLM inference** — frees 2–4 GB RAM
 8. **Pin OpenClaw to a stable release** — don't use dev/nightly
@@ -182,10 +182,10 @@ d:\Desktop\gaganAI\
 - [x] Pull Qwen 2.5 7B model
 - [x] Pull Phi-4-mini model
 - [x] Install & configure OpenClaw (v2026.10.9) in workspace sandbox
-- [x] Connect OpenClaw to Ollama (primary: qwen2.5:7b, phi4-mini)
+- [x] Connect OpenClaw to Ollama (primary: phi4-mini:latest, 1st fallback: qwen2.5:7b)
 - [x] Configure Telegram bot channel (open DM policy)
-- [x] Test basic chat via Telegram (Gateway live & polling on @GaganjiBot)
-- [x] Configure Gemini & Groq fallbacks (Groq llama-3.3-70b-versatile, Gemini gemini-2.5-flash)
+- [x] Run `start_gagan_ai.ps1` in a persistent PowerShell window and verify a Telegram reply from @GaganjiBot
+- [x] Configure Groq and Gemini fallbacks (Groq openai/gpt-oss-120b, Gemini gemini-2.5-flash)
 - [x] Test tiered model routing
 - [x] Create .gitignore & git init
 
