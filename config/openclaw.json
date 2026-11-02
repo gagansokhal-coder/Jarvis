@@ -1,0 +1,35 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/qwen2.5:7b",
+        "fallbacks": [
+          "groq/llama-3.3-70b-versatile",
+          "google/gemini-2.5-flash"
+        ]
+      }
+    },
+    "entries": {
+      "gagan": {
+        "name": "Gagan",
+        "description": "Personal AI Assistant for Gagan Rajput",
+        "default": true
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "allowFrom": [
+        "*"
+      ]
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "none"
+    }
+  }
+}
