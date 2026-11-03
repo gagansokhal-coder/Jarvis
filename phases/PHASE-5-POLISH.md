@@ -1,6 +1,6 @@
 # Phase 5: Polish — Memory, Cloud Hosting & Hardening
 
-> **Priority:** 🟢 MEDIUM — Makes JARVIS smarter and always-on
+> **Priority:** 🟢 MEDIUM — Makes Gagan AI smarter and always-on
 > **Estimated Time:** Ongoing
 > **Dependencies:** Phases 1–4 COMPLETE
 > **Status:** 🔲 NOT STARTED
@@ -9,13 +9,13 @@
 
 ## Overview
 
-This phase transforms JARVIS from a tool into an intelligent companion:
+This phase transforms Gagan AI into an intelligent, autonomous companion:
 1. **Persistent Memory** — Remembers conversations, preferences, context
 2. **RAG Pipeline** — Retrieves relevant past interactions and documents
 3. **Oracle Cloud** — 24/7 always-on Telegram bot (even when laptop is off)
 4. **Security Hardening** — Audit, encrypt, and lock down everything
 5. **Performance Tuning** — Optimize RAM, speed, and responsiveness
-6. **Custom Skills** — Build JARVIS-specific automation routines
+6. **Custom Skills** — Build Gagan-specific automation routines
 
 ---
 
@@ -464,10 +464,10 @@ async def execute(params: dict) -> str:
 
 When all 5 phases are done, you'll have:
 
-- ✅ A personal AI assistant that responds to "Hey Jarvis"
-- ✅ Email management with smart categorization and reply drafting
+- ✅ A personal AI assistant that responds to "Hey Gagan" / "Gagan Rajput"
+- ✅ Email management across 6 inboxes with smart categorization and auto-read
 - ✅ Automated morning briefings delivered to Telegram
-- ✅ Calendar management and deadline tracking
+- ✅ Calendar management and autonomous email-to-calendar sync
 - ✅ Browser automation for college portal and web tasks
 - ✅ Desktop control (launch apps, system status, screenshots)
 - ✅ Remote control via Telegram from anywhere
@@ -475,5 +475,5 @@ When all 5 phases are done, you'll have:
 - ✅ Scheduled routines running automatically
 - ✅ All running at ₹0/month cost
 
-**Congratulations, you've built JARVIS! 🚀**
+**Congratulations, you've built Gagan AI! 🚀**
 

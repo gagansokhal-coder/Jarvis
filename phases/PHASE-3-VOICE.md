@@ -246,7 +246,7 @@ curl -L -o en_US-lessac-medium.onnx.json https://huggingface.co/rhasspy/piper-vo
 ### Test Piper TTS
 
 ```powershell
-echo "Hello, I am Jarvis, your personal assistant" | .\voice\tts\piper\piper.exe --model .\voice\tts\piper\en_US-lessac-medium.onnx --output_file test_speech.wav
+echo "Hello, I am Gagan, your personal assistant" | .\voice\tts\piper\piper.exe --model .\voice\tts\piper\en_US-lessac-medium.onnx --output_file test_speech.wav
 
 # Play the output:
 start test_speech.wav
@@ -269,7 +269,7 @@ pip install edge-tts
 edge-tts --list-voices | findstr "en-"
 
 # Generate speech (uses Microsoft's neural voices for free):
-edge-tts --voice "en-US-GuyNeural" --text "Hello, I am Jarvis" --write-media test_edge.mp3
+edge-tts --voice "en-US-GuyNeural" --text "Hello, I am Gagan Rajput" --write-media test_edge.mp3
 
 # Play:
 start test_edge.mp3
@@ -279,8 +279,8 @@ start test_edge.mp3
 
 | Voice | Style | Best For |
 |---|---|---|
-| `en-US-GuyNeural` | Professional male | Default JARVIS voice |
-| `en-US-ChristopherNeural` | Confident male | Alternative JARVIS |
+| `en-US-GuyNeural` | Professional male | Default Gagan voice |
+| `en-US-ChristopherNeural` | Confident male | Alternative Gagan voice |
 | `en-GB-RyanNeural` | British male | If you want a Tony Stark vibe |
 | `en-IN-PrabhatNeural` | Indian male | If you prefer Indian accent |
 
@@ -294,7 +294,7 @@ Create `d:\Desktop\gaganAI\voice\bridge.py`:
 
 ```python
 """
-JARVIS Voice Bridge
+Gagan AI Voice Bridge
 Connects: Mic → Wake Word → STT → OpenClaw API → TTS → Speaker
 
 This is the main voice pipeline script. Run it at startup for
@@ -317,7 +317,7 @@ from openwakeword.model import Model
 # CONFIGURATION
 # ============================================================
 
-WAKEWORD_MODEL = "hey_jarvis_v0.1"  # or path to custom .onnx
+WAKEWORD_MODEL = "hey_gagan.onnx"  # custom trained model (or hey_jarvis_v0.1)
 WAKEWORD_THRESHOLD = 0.5
 WHISPER_BINARY = r"d:\Desktop\gaganAI\voice\stt\main.exe"
 WHISPER_MODEL = r"d:\Desktop\gaganAI\voice\stt\ggml-base.en.bin"
@@ -381,7 +381,7 @@ def transcribe(audio_bytes):
     return result.stdout.strip()
 
 
-def ask_jarvis(text):
+def ask_gagan(text):
     """Send text to OpenClaw and get response."""
     try:
         response = requests.post(OPENCLAW_API, json={
@@ -390,7 +390,7 @@ def ask_jarvis(text):
         }, timeout=30)
         return response.json().get("reply", "Sorry, I didn't understand.")
     except Exception as e:
-        print(f"Error contacting JARVIS: {e}")
+        print(f"Error contacting Gagan AI: {e}")
         return "I'm having trouble connecting right now."
 
 
@@ -429,8 +429,8 @@ def speak(text, use_edge=True):
 
 def main():
     print("=" * 50)
-    print("🤖 JARVIS Voice Assistant")
-    print("   Say 'Hey Jarvis' to activate")
+    print("🤖 Gagan AI Voice Assistant")
+    print("   Say 'Hey Gagan' to activate")
     print("   Press Ctrl+C to exit")
     print("=" * 50)
 
@@ -475,10 +475,10 @@ def main():
                     print(f"   You said: '{text}'")
 
                     if text and len(text.strip()) > 2:
-                        # Step 4: Send to JARVIS
+                        # Step 4: Send to Gagan AI
                         print("🧠 Thinking...")
-                        response = ask_jarvis(text)
-                        print(f"   JARVIS: {response}")
+                        response = ask_gagan(text)
+                        print(f"   Gagan: {response}")
 
                         # Step 5: Speak response
                         print("🗣️ Speaking...")
@@ -489,7 +489,7 @@ def main():
                     print("\n🎤 Listening for wake word...")
 
     except KeyboardInterrupt:
-        print("\n\n👋 JARVIS signing off. Goodbye!")
+        print("\n\n👋 Gagan AI signing off. Goodbye!")
         stream.close()
         audio.terminate()
 
@@ -514,9 +514,9 @@ python voice\bridge.py
 
 Expected flow:
 1. Script starts → "Listening for wake word..."
-2. You say "Hey Jarvis" → "Wake word detected!"
+2. You say "Hey Gagan" → "Wake word detected!"
 3. You say "What time is it?" → "Transcribing..."
-4. OpenClaw processes → "JARVIS: It's 10:30 AM"
+4. OpenClaw processes → "Gagan: It's 10:30 AM"
 5. Speaker plays the response
 6. Returns to listening
 
@@ -528,11 +528,11 @@ Expected flow:
 
 ### Create a Batch File
 
-Create `d:\Desktop\gaganAI\start_jarvis_voice.bat`:
+Create `d:\Desktop\gaganAI\start_gagan_voice.bat`:
 
 ```batch
 @echo off
-title JARVIS Voice Assistant
+title Gagan Voice Assistant
 cd /d d:\Desktop\gaganAI
 call venv\Scripts\activate.bat
 python voice\bridge.py
@@ -544,21 +544,21 @@ pause
 ```powershell
 # Create shortcut in Startup folder:
 $shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\JARVIS Voice.lnk")
-$shortcut.TargetPath = "d:\Desktop\gaganAI\start_jarvis_voice.bat"
+$shortcut = $shell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Gagan Voice.lnk")
+$shortcut.TargetPath = "d:\Desktop\gaganAI\start_gagan_voice.bat"
 $shortcut.WorkingDirectory = "d:\Desktop\gaganAI"
 $shortcut.WindowStyle = 7  # Minimized
 $shortcut.Save()
 ```
 
-**✅ Checkpoint:** JARVIS voice starts automatically on Windows boot.
+**✅ Checkpoint:** Gagan voice starts automatically on Windows boot.
 
 ---
 
 ## Phase 3 Completion Criteria
 
 - [ ] Python venv created and working
-- [ ] OpenWakeWord installed and detecting "Hey Jarvis"
+- [ ] OpenWakeWord installed and detecting "Hey Gagan" / "Gagan Rajput"
 - [ ] whisper.cpp downloaded, base.en model working
 - [ ] Piper TTS generating speech offline
 - [ ] edge-tts generating premium speech online

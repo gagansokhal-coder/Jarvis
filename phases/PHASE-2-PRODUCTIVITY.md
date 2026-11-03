@@ -1,6 +1,6 @@
 # Phase 2: Productivity — Gmail, Calendar & Morning Briefing
 
-> **Priority:** 🔴 CRITICAL — Core JARVIS functionality
+> **Priority:** 🔴 CRITICAL — Core Gagan AI functionality
 > **Estimated Time:** 4–5 days
 > **Dependencies:** Phase 1 COMPLETE
 > **Status:** ✅ COMPLETE
@@ -9,22 +9,22 @@
 
 ## Overview
 
-This phase connects JARVIS to your digital life:
-1. **Gmail** — Read, categorize, summarize, and reply to emails
-2. **Google Calendar** — Check schedule, deadlines, meetings
+This phase connects Gagan AI to your digital life:
+1. **Gmail** — Read, categorize, summarize, and reply to emails across 6 connected inboxes
+2. **Google Calendar** — Check schedule, deadlines, meetings (`gagansokhal077@gmail.com`)
 3. **Morning Briefing** — Automated daily summary via Telegram
-4. **Scheduled Routines** — Cron-like background automation
+4. **Scheduled Routines** — Background automation and real-time inbox watcher
 
-After Phase 2, saying "Jarvis, check my emails" or "prepare my morning
-briefing" will actually work.
+After Phase 2, saying "Gagan, check my emails" or "prepare my morning
+briefing" works automatically.
 
 ---
 
 ## Prerequisites
 
 - [x] Phase 1 complete (OpenClaw + Ollama + Telegram working)
-- [ ] Google account (personal Gmail)
-- [ ] Access to Google Cloud Console (free, no CC required)
+- [x] Google account (6 inboxes connected)
+- [x] Access to Google Cloud Console (free, no CC required)
 
 ---
 
@@ -113,15 +113,15 @@ npx openclaw skill install google-workspace
 ### First-Time OAuth Authentication
 
 The first time you access Gmail, a browser window will open asking you to
-authorize JARVIS. Click through the "unverified app" warnings:
+authorize Gagan AI. Click through the "unverified app" warnings:
 
 ```
 1. Browser opens → Select your Gmail account
 2. "Google hasn't verified this app" → Click "Advanced"
-3. Click "Go to JARVIS Personal Assistant (unsafe)"
+3. Click "Go to Gagan AI (unsafe)"
 4. Grant all requested permissions
-5. "JARVIS wants to access your Google Account" → Allow
-6. Token saved to credentials/gmail_token.json
+5. "Gagan AI wants to access your Google Account" → Allow
+6. Token saved to credentials/tokens/
 ```
 
 ### Test Gmail Reading
@@ -166,9 +166,9 @@ For each email, also identify:
 
 ```
 User: "Reply to Professor Kumar's email"
-JARVIS: [Fetches the email thread]
-JARVIS: [Generates draft reply]
-JARVIS: "Here's my draft reply:
+Gagan: [Fetches the email thread]
+Gagan: [Generates draft reply]
+Gagan: "Here's my draft reply:
 
   Dear Professor Kumar,
   Thank you for the feedback on my assignment...
@@ -178,7 +178,7 @@ JARVIS: "Here's my draft reply:
   [✅ Send] [✏️ Edit] [❌ Cancel]"
 
 User: [Clicks ✅ Send]
-JARVIS: "✅ Email sent to Prof. Kumar"
+Gagan: "✅ Email sent to Prof. Kumar"
 ```
 
 ### Implementation Notes

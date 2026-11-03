@@ -1,8 +1,8 @@
 # Phase 4: Automation — Browser, Desktop & Shell Control
 
-> **Priority:** 🟡 HIGH — "Jarvis, open Chrome and check my portal"
+> **Priority:** 🟡 HIGH — "Gagan, open Chrome and check my portal"
 > **Estimated Time:** 3–5 days
-> **Dependencies:** Phase 1 COMPLETE
+> **Dependencies:** Phase 1 COMPLETE, Phase 2 COMPLETE
 > **Status:** 🔲 NOT STARTED
 
 ---
@@ -11,12 +11,12 @@
 
 This phase adds real-world automation:
 1. **Browser Automation** — AI-driven web browsing (Playwright + browser-use)
-2. **College Portal** — Automated login and data extraction
+2. **College Portal** — Automated login and data extraction (NIT Jalandhar portal)
 3. **Desktop Automation** — Launch apps, manage files, system control
 4. **Shell Execution** — Run PowerShell commands via natural language
 5. **Security Sandbox** — Whitelist and approval for dangerous commands
 
-After Phase 4, JARVIS can browse the web, check your college portal,
+After Phase 4, Gagan AI can browse the web, check your college portal,
 open applications, and manage your desktop — all via voice or Telegram.
 
 ---
@@ -326,7 +326,7 @@ Create `d:\Desktop\gaganAI\automation\desktop\system.py`:
 
 ```python
 """
-System control commands for JARVIS.
+System control commands for Gagan AI.
 """
 import subprocess
 import psutil

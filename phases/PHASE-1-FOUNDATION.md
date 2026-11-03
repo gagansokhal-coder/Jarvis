@@ -11,7 +11,7 @@
 
 This phase sets up the three pillars:
 1. **Ollama** — Local LLM inference (zero cost AI brain)
-2. **OpenClaw** — Agent orchestration platform (the JARVIS backbone)
+2. **OpenClaw** — Agent orchestration platform (the Gagan AI backbone)
 3. **Telegram Bot** — Primary remote control interface
 
 After Phase 1, you will have a working AI assistant you can chat with
@@ -256,7 +256,7 @@ status - System status
 help - List available commands
 ```
 
-**✅ Checkpoint:** You can chat with JARVIS via Telegram and get intelligent responses powered by your local Qwen 2.5 7B model.
+**✅ Checkpoint:** You can chat with Gagan AI via Telegram and get intelligent responses powered by your local Phi-4-mini and Qwen 2.5 7B models.
 
 ---
 
