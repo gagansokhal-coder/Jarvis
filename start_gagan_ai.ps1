@@ -88,6 +88,16 @@ Log-Message "[INFO] Validating OpenClaw configuration..."
 & $nodeExe $openclawMjs config validate 2>&1 | Out-Null
 Log-Message "[OK] Configuration valid!" "Green"
 
-# 7. Launch Gateway with live output logging
+# 7. Start Real-time Email & Calendar Watcher Daemon if not already running
+$existingWatcher = Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" | Where-Object { $_.CommandLine -like "*email_watcher*" }
+if (-not $existingWatcher) {
+    Log-Message "[INFO] Starting Real-time Email & Calendar Watcher Daemon..." "Cyan"
+    $pythonPath = (Get-Command python.exe).Source
+    $watcherScript = Join-Path $WorkspaceRoot "scripts\email_watcher.py"
+    Start-Process -FilePath $pythonPath -ArgumentList $watcherScript -WindowStyle Hidden
+    Log-Message "[OK] Real-time Email Watcher started in background!" "Green"
+}
+
+# 8. Launch Gateway with live output logging
 Log-Message "[INFO] Launching OpenClaw Gateway on Telegram..."
 & $nodeExe $openclawMjs gateway run *>> $logFile

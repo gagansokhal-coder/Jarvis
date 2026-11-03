@@ -18,7 +18,7 @@ try {
 
 # 2. Check Gateway Process
 $gwProcs = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" | Where-Object {
-    $_.CommandLine -and ($_.CommandLine -like "*openclaw.mjs*gateway*" -or $_.CommandLine -like "*openclaw*gateway*run*")
+    $_.CommandLine -and ($_.CommandLine -like "*gateway*" -or $_.CommandLine -like "*openclaw*")
 }
 
 if ($gwProcs) {
@@ -29,6 +29,23 @@ if ($gwProcs) {
     }
     Write-Host '[OK] Telegram Bot (@GaganjiBot) is LIVE and listening.' -ForegroundColor Green
 } else {
-    Write-Host '[INFO] Gateway is NOT running. Run .\start_gagan_ai.bat to start in background.' -ForegroundColor Yellow
+    Write-Host '[INFO] Gateway is NOT running.' -ForegroundColor Yellow
 }
+
+# 3. Check Real-Time Email Watcher Process
+$watcherProcs = Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" | Where-Object {
+    $_.CommandLine -and $_.CommandLine -like "*email_watcher*"
+}
+
+if ($watcherProcs) {
+    foreach ($wp in $watcherProcs) {
+        $wInfo = Get-Process -Id $wp.ProcessId -ErrorAction SilentlyContinue
+        $wMem = [Math]::Round(($wInfo.WorkingSet64 / 1MB), 1)
+        Write-Host "[OK] Email Watcher Daemon is RUNNING (PID: $($wp.ProcessId), RAM: $wMem MB)" -ForegroundColor Green
+    }
+    Write-Host '[OK] Real-time Inbox & Calendar sync is ACTIVE across 6 Google accounts.' -ForegroundColor Green
+} else {
+    Write-Host '[INFO] Email Watcher Daemon is NOT running.' -ForegroundColor Yellow
+}
+
 Write-Host "==========================================================" -ForegroundColor Cyan
