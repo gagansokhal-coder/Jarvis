@@ -1,0 +1,41 @@
+{
+  "primary_calendar_account": "gagansokhal077@gmail.com",
+  "accounts": [
+    {
+      "email": "rajputdeveloper44@gmail.com",
+      "token_file": "credentials/tokens/token_rajputdeveloper44@gmail.com.json",
+      "is_primary_calendar": false,
+      "enabled": true
+    },
+    {
+      "email": "gagansokhal077@gmail.com",
+      "token_file": "credentials/tokens/token_gagansokhal077@gmail.com.json",
+      "is_primary_calendar": true,
+      "enabled": true
+    },
+    {
+      "email": "gaganrajput1008@gmail.com",
+      "token_file": "credentials/tokens/token_gaganrajput1008@gmail.com.json",
+      "is_primary_calendar": false,
+      "enabled": true
+    },
+    {
+      "email": "gagancoder22@gmail.com",
+      "token_file": "credentials/tokens/token_gagancoder22@gmail.com.json",
+      "is_primary_calendar": false,
+      "enabled": true
+    },
+    {
+      "email": "jaibabagi108@gmail.com",
+      "token_file": "credentials/tokens/token_jaibabagi108@gmail.com.json",
+      "is_primary_calendar": false,
+      "enabled": true
+    },
+    {
+      "email": "gagandeep.cs.25@nitj.ac.in",
+      "token_file": "credentials/tokens/token_gagandeep.cs.25@nitj.ac.in.json",
+      "is_primary_calendar": false,
+      "enabled": true
+    }
+  ]
+}
