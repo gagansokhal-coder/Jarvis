@@ -82,7 +82,7 @@ User request → Router
 ### Voice Pipeline
 
 ```
-Mic → OpenWakeWord("Hey Jarvis") → whisper.cpp(base.en) → OpenClaw → Piper TTS/Edge-TTS → Speaker
+Mic → OpenWakeWord("Hey Gagan") → whisper.cpp(base.en) → OpenClaw → Piper TTS/Edge-TTS → Speaker
 ```
 
 ### Key Tech Choices
@@ -207,7 +207,7 @@ d:\Desktop\gaganAI\
 ### Phase 3: Voice
 - [ ] Install Python 3.11+
 - [ ] Install OpenWakeWord
-- [ ] Train custom "Hey Jarvis" wake word
+- [ ] Train custom "Hey Gagan" / "Gagan Rajput" wake word
 - [ ] Download whisper.cpp Windows binary
 - [ ] Download whisper base.en model
 - [ ] Install Piper TTS + English voice

@@ -1,8 +1,8 @@
-# 🤖 Project JARVIS — Complete Technical Strategy
+# 🤖 Gagan AI (Gagan Rajput) — Complete Technical Strategy
 
-> **Mission:** Build the most capable personal AI assistant with ₹0 recurring cost, using open-source software, student benefits, free cloud resources, and local AI models.
+> **Mission:** Build the most capable personal AI assistant (Gagan / Gagan Rajput) with ₹0 recurring cost, using open-source software, student benefits, free cloud resources, and local AI models.
 >
-> **Status:** Research & Planning Complete — Ready for Implementation
+> **Status:** Phase 1 & Phase 2 Complete — Phase 3 (Voice) Ready
 
 ---
 
@@ -15,7 +15,7 @@
 5. [Free Resources & Student Benefits](#5-free-resources--student-benefits)
 6. [Complete System Architecture](#6-complete-system-architecture)
 7. [Module-by-Module Implementation Plan](#7-module-by-module-implementation-plan)
-8. [JARVIS Capabilities Mapping](#8-jarvis-capabilities-mapping)
+8. [Gagan AI Capabilities Mapping](#8-gagan-ai-capabilities-mapping)
 9. [Security Architecture](#9-security-architecture)
 10. [Phased Implementation Roadmap](#10-phased-implementation-roadmap)
 11. [Risk Analysis & Mitigations](#11-risk-analysis--mitigations)
@@ -135,18 +135,18 @@
 > [!IMPORTANT]
 > ### 🏆 Recommended: OpenClaw as the Core Platform
 >
-> For your specific JARVIS use cases (email management, calendar briefings, Telegram control, remote access, scheduled automation), **OpenClaw is the clear winner**. It has every critical integration you need as first-class features, a massive community for support, and proven production stability.
+> For your specific Gagan AI use cases (email management, calendar briefings, Telegram control, remote access, scheduled automation), **OpenClaw is the clear winner**. It has every critical integration you need as first-class features, a massive community for support, and proven production stability.
 
 ### Why OpenClaw wins for YOUR requirements:
 
 ```mermaid
 flowchart TD
-    A["Your JARVIS Requirements"] --> B{"Email + Calendar + Telegram + Remote Control + Scheduled Tasks?"}
+    A["Your Gagan AI Requirements"] --> B{"Email + Calendar + Telegram + Remote Control + Scheduled Tasks?"}
     B -->|"All built-in"| C["✅ OpenClaw"]
     B -->|"Needs MCP plugins + custom dev"| D["⚠️ Dodaios"]
     C --> E["+ Add local voice layer with OpenWakeWord + Whisper + Piper"]
     D --> F["Voice is great, but missing too many core features"]
-    E --> G["🎯 Complete JARVIS System"]
+    E --> G["🎯 Complete Gagan AI System"]
 ```
 
 ### The Hybrid Strategy
@@ -202,7 +202,7 @@ Use **OpenClaw** as the brain and automation backbone, then layer on **Dodaios-i
 ```mermaid
 flowchart LR
     A["🎤 Microphone"] --> B["OpenWakeWord\n(always listening,\n~50MB RAM)"]
-    B -->|"'Hey Jarvis' detected"| C["Whisper.cpp\nbase.en model\n(~150MB RAM)"]
+    B -->|"'Hey Gagan' detected"| C["Whisper.cpp\nbase.en model\n(~150MB RAM)"]
     C -->|"Transcribed text"| D["OpenClaw\nAgent Brain"]
     D -->|"Response text"| E{"Online?"}
     E -->|"Yes"| F["Edge-TTS\n(Free Microsoft\nneural voices)"]
@@ -213,7 +213,7 @@ flowchart LR
 
 | Component | Tool | RAM | Speed | Notes |
 |---|---|---|---|---|
-| **Wake Word** | OpenWakeWord | ~50 MB | Real-time | Apache 2.0. Train custom "Hey Jarvis" via free Colab notebook. |
+| **Wake Word** | OpenWakeWord | ~50 MB | Real-time | Apache 2.0. Train custom "Hey Gagan" / "Gagan Rajput" via free Colab notebook. |
 | **Speech-to-Text** | whisper.cpp (base.en) | ~150 MB | Real-time | Standalone `.exe` on Windows. No Python needed. High accuracy. |
 | **TTS (Online)** | edge-tts | ~10 MB | Instant | Free Microsoft neural voices. Studio quality. Needs internet. |
 | **TTS (Offline)** | Piper TTS | ~80 MB | Instant | ONNX models. Works on CPU. Good quality. Fully offline. |
@@ -241,12 +241,12 @@ When local models aren't enough for complex tasks:
 
 > Apply at [education.github.com](https://education.github.com) with your NIT Jalandhar `.ac.in` email or college ID.
 
-| Benefit | Value | Use Case for JARVIS |
+| Benefit | Value | Use Case for Gagan AI |
 |---|---|---|
 | **GitHub Copilot** | Free (~\$120/yr saved) | AI-assisted coding during development |
 | **Microsoft Azure for Students** | \$100 credits (no CC) | Host OpenClaw backend, test cloud services |
 | **JetBrains IDEs** | Free professional licenses | PyCharm, WebStorm for development |
-| **Namecheap** | Free `.me` domain (1 year) | Custom domain for your JARVIS API |
+| **Namecheap** | Free `.me` domain (1 year) | Custom domain for your Gagan AI API |
 | **MongoDB Atlas** | Credits | Database for conversation memory |
 
 ### 5.2 Oracle Cloud Always Free Tier
@@ -395,7 +395,7 @@ Estimated time: 1 day
 ### Module 3: Gmail & Calendar Integration
 
 ```
-Priority: 🔴 CRITICAL — Core JARVIS functionality
+Priority: 🔴 CRITICAL — Core Gagan AI functionality
 Estimated time: 2–3 days
 ```
 
@@ -415,14 +415,14 @@ Estimated time: 2–3 days
 ### Module 4: Voice Interface (Local)
 
 ```
-Priority: 🟡 HIGH — The "JARVIS feel"
+Priority: 🟡 HIGH — The "Gagan AI voice experience"
 Estimated time: 3–4 days
 ```
 
 | Step | Action |
 |---|---|
 | 1 | Install OpenWakeWord (Python, pip install openwakeword) |
-| 2 | Train custom "Hey Jarvis" wake word (free Google Colab notebook) |
+| 2 | Train custom "Hey Gagan" / "Gagan Rajput" wake word (free Google Colab notebook) |
 | 3 | Install whisper.cpp (download pre-built Windows `.exe`) |
 | 4 | Download `base.en` model (~150 MB) |
 | 5 | Install Piper TTS + download English voice model |
@@ -491,88 +491,88 @@ Estimated time: 2–3 days
 
 ---
 
-## 8. JARVIS Capabilities Mapping
+## 8. Gagan AI Capabilities Mapping
 
-### "Jarvis, check all my emails."
+### "Gagan, check all my emails."
 
 ```mermaid
 sequenceDiagram
     participant U as You (Voice/Telegram)
-    participant J as JARVIS (OpenClaw)
-    participant G as Gmail API
-    participant L as Local LLM (Qwen 2.5)
+    participant G as Gagan (OpenClaw)
+    participant GM as Gmail API
+    participant L as Local LLM (Phi-4-mini)
 
-    U->>J: "Check all my emails"
-    J->>G: Fetch unread emails (Gmail API)
-    G-->>J: Return email list
-    J->>L: Classify: college / personal / professional
-    L-->>J: Categories + priorities
-    J->>L: Identify deadlines, action items
-    L-->>J: Deadline list, reply-needed list
-    J->>L: Generate summary
-    L-->>J: Formatted briefing
-    J->>U: "You have 12 unread emails:\n• 3 college (1 deadline tomorrow)\n• 2 professional (1 needs reply)\n• 7 personal/newsletters"
+    U->>G: "Check all my emails"
+    G->>GM: Fetch unread emails (Gmail API across 6 accounts)
+    GM-->>G: Return email list
+    G->>L: Classify: college / personal / professional
+    L-->>G: Categories + priorities
+    G->>L: Identify deadlines, action items
+    L-->>G: Deadline list, reply-needed list
+    G->>L: Generate summary
+    L-->>G: Formatted briefing
+    G->>U: "You have 12 unread emails:\n• 3 college (1 deadline tomorrow)\n• 2 professional (1 needs reply)\n• 7 personal/newsletters"
 ```
 
-### "Jarvis, reply to my professor."
+### "Gagan, reply to my professor."
 
 ```mermaid
 sequenceDiagram
     participant U as You
-    participant J as JARVIS
-    participant G as Gmail API
+    participant G as Gagan
+    participant GM as Gmail API
     participant L as Local LLM
 
-    U->>J: "Reply to my professor"
-    J->>G: Fetch recent professor emails
-    G-->>J: Conversation thread
-    J->>L: Understand context, draft reply
-    L-->>J: Draft response
-    J->>U: "Here's my draft reply:\n[Draft text]\nShall I send this?"
-    U->>J: "Yes, send it" / "Change X"
-    J->>G: Send email via Gmail API
-    G-->>J: Sent confirmation
-    J->>U: "✅ Email sent to Prof. [Name]"
+    U->>G: "Reply to my professor"
+    G->>GM: Fetch recent professor emails
+    GM-->>G: Conversation thread
+    G->>L: Understand context, draft reply
+    L-->>G: Draft response
+    G->>U: "Here's my draft reply:\n[Draft text]\nShall I send this?"
+    U->>G: "Yes, send it" / "Change X"
+    G->>GM: Send email via Gmail API
+    GM-->>G: Sent confirmation
+    G->>U: "✅ Email sent to Prof. [Name]"
 ```
 
-### "Jarvis, prepare my morning briefing."
+### "Gagan, prepare my morning briefing."
 
 ```mermaid
 sequenceDiagram
     participant C as Cron (7:00 AM)
-    participant J as JARVIS
+    participant G as Gagan
     participant GM as Gmail API
     participant GC as Calendar API
     participant L as Local LLM
     participant T as Telegram
 
-    C->>J: Trigger morning briefing
-    J->>GM: Fetch overnight emails
-    GM-->>J: Email data
-    J->>GC: Fetch today's events + week deadlines
-    GC-->>J: Calendar data
-    J->>L: Generate comprehensive briefing
-    L-->>J: Formatted morning report
-    J->>T: Send briefing to your Telegram
-    T-->>J: Delivered ✅
+    C->>G: Trigger morning briefing
+    G->>GM: Fetch overnight emails
+    GM-->>G: Email data
+    G->>GC: Fetch today's events + week deadlines
+    GC-->>G: Calendar data
+    G->>L: Generate comprehensive briefing
+    L-->>G: Formatted morning report
+    G->>T: Send briefing to your Telegram
+    T-->>G: Delivered ✅
 ```
 
-### "Jarvis, open Chrome and check my college portal."
+### "Gagan, open Chrome and check my college portal."
 
 ```mermaid
 sequenceDiagram
     participant U as You
-    participant J as JARVIS
+    participant G as Gagan
     participant B as Browser (Playwright)
     participant L as Local LLM
 
-    U->>J: "Open Chrome and check college portal"
-    J->>B: Launch Chromium, navigate to portal URL
-    B-->>J: Page loaded
-    J->>B: Use saved session cookies to authenticate
-    B-->>J: Dashboard loaded
-    J->>B: Extract page content (notices, grades, updates)
-    B-->>J: Extracted data
+    U->>G: "Open Chrome and check college portal"
+    G->>B: Launch Chromium, navigate to portal URL
+    B-->>G: Page loaded
+    G->>B: Use saved session cookies to authenticate
+    B-->>G: Dashboard loaded
+    G->>B: Extract page content (notices, grades, updates)
+    B-->>G: Extracted data
     J->>L: Summarize important updates
     L-->>J: Summary
     J->>U: "Your portal shows:\n• New notice: Exam schedule released\n• Assignment due: Nov 5\n• Attendance: 87%"
@@ -583,7 +583,7 @@ sequenceDiagram
 ## 9. Security Architecture
 
 > [!CAUTION]
-> Your JARVIS will have access to your email, calendar, browser sessions, and system terminal. Security is non-negotiable.
+> Your Gagan AI assistant will have access to your email, calendar, browser sessions, and system terminal. Security is non-negotiable.
 
 ### 9.1 Credential Management
 
@@ -682,7 +682,7 @@ flowchart LR
 | **Free API rate limits hit during heavy use** | 🟢 Low | 🟡 Medium | Implement tiered routing: local Ollama → Groq → Gemini. Cache responses. Use exponential backoff. |
 | **Gemini free tier uses your data for training** | 🟠 High | ✅ Certain | NEVER send private emails/passwords via Gemini. Use local Ollama for all private data. Only use Gemini for general tasks. |
 | **OpenClaw breaking changes (fast-moving project)** | 🟡 Medium | 🟡 Medium | Pin to a stable release version. Follow release channels. Don't use dev/bleeding-edge. |
-| **Power outage / laptop shutdown kills JARVIS** | 🟡 Medium | 🟡 Medium | Phase 5: Oracle Cloud fallback for Telegram bot. Local: Windows Task Scheduler auto-restart on boot. |
+| **Power outage / laptop shutdown kills Gagan AI** | 🟡 Medium | 🟡 Medium | Phase 5: Oracle Cloud fallback for Telegram bot. Local: Windows Task Scheduler auto-restart on boot. |
 
 ---
 
