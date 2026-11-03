@@ -11,12 +11,21 @@ import zoneinfo
 from morning_briefing import generate_morning_briefing
 from gmail_manager import get_all_unread_emails, format_telegram_summary
 from telegram_sender import send_telegram_message
+from email_calendar_sync import sync_events_from_emails
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 
 def run_routine(routine_name):
     now_ist = datetime.now(IST)
     print(f"[{now_ist.isoformat()}] Running routine: {routine_name}...")
+
+    # Always perform email-to-calendar sync pre-flight
+    try:
+        newly_synced = sync_events_from_emails()
+        if newly_synced:
+            print(f"Auto-synced {len(newly_synced)} new calendar events from emails.")
+    except Exception as e:
+        print(f"Calendar sync warning: {e}", file=sys.stderr)
 
     if routine_name == "morning-briefing":
         briefing = generate_morning_briefing()
@@ -59,3 +68,4 @@ def run_routine(routine_name):
 if __name__ == '__main__':
     routine = sys.argv[1] if len(sys.argv) > 1 else "morning-briefing"
     run_routine(routine)
+

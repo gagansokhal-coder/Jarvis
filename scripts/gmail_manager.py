@@ -81,10 +81,23 @@ def extract_body(payload):
                     pass
             elif 'parts' in part:
                 body_text += extract_body(part)
+            elif mime_type == 'text/html' and not body_text and 'data' in part.get('body', {}):
+                try:
+                    raw_html = base64.urlsafe_b64decode(part['body']['data'].encode('ASCII')).decode('utf-8', errors='replace')
+                    # Strip basic HTML tags
+                    clean = re.sub(r'<[^>]+>', ' ', raw_html)
+                    clean = re.sub(r'\s+', ' ', clean)
+                    body_text += clean + "\n"
+                except Exception:
+                    pass
     elif 'body' in payload and 'data' in payload['body']:
         data = payload['body']['data']
         try:
-            body_text += base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8', errors='replace')
+            raw = base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8', errors='replace')
+            if payload.get('mimeType') == 'text/html':
+                raw = re.sub(r'<[^>]+>', ' ', raw)
+                raw = re.sub(r'\s+', ' ', raw)
+            body_text += raw
         except Exception:
             pass
     return body_text.strip()
