@@ -48,3 +48,4 @@ Register-JarvisTask -TaskName "JARVIS-Email-Digest-Morning" -DailyTime "09:00" -
 Register-JarvisTask -TaskName "JARVIS-Email-Digest-Evening" -DailyTime "18:00" -RoutineName "email-digest"
 
 Write-Host "`nAll JARVIS scheduled routines registered successfully!"
+

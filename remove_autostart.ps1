@@ -11,3 +11,4 @@ if (Test-Path $shortcutPath) {
 } else {
     Write-Host "[INFO] No autostart shortcut found in Windows Startup." -ForegroundColor Yellow
 }
+

@@ -249,3 +249,4 @@ def run_watcher(single_pass=False):
 if __name__ == '__main__':
     is_once = "--once" in sys.argv
     run_watcher(single_pass=is_once)
+

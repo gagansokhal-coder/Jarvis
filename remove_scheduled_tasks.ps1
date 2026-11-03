@@ -7,3 +7,4 @@ foreach ($t in $tasks) {
     } catch {}
 }
 Write-Host "All JARVIS scheduled tasks removed."
+

@@ -21,3 +21,4 @@ Write-Host " Gagan AI will now automatically start in the background" -Foregroun
 Write-Host " whenever you boot your laptop or log in to Windows." -ForegroundColor Green
 Write-Host " Shortcut: $shortcutPath" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
+
