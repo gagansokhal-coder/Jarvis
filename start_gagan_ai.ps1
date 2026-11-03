@@ -1,5 +1,5 @@
 # =====================================================================
-# Gagan AI (JARVIS) — Gateway & Agent Launcher
+# Gagan AI — Gateway & Agent Launcher
 # =====================================================================
 
 $WorkspaceRoot = $PSScriptRoot

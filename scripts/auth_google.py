@@ -72,11 +72,11 @@ def add_account():
         sys.exit(1)
 
     print("\n=======================================================")
-    print("  CONNECTING A GOOGLE ACCOUNT TO JARVIS")
+    print("  CONNECTING A GOOGLE ACCOUNT TO GAGAN AI")
     print("=======================================================")
     print("A browser window will open.")
     print("👉 Choose the Google account you wish to connect.")
-    print("👉 If prompted with 'Unverified app', click Advanced -> Go to JARVIS (unsafe).")
+    print("👉 If prompted with 'Unverified app', click Advanced -> Go to Gagan AI (unsafe).")
     print("👉 Grant permissions for Gmail and Google Calendar.")
     print("=======================================================\n")
 
@@ -86,7 +86,7 @@ def add_account():
         port=0,
         prompt='select_account consent',
         access_type='offline',
-        authorization_prompt_message="Please visit this URL to authorize JARVIS:\n{url}\n",
+        authorization_prompt_message="Please visit this URL to authorize Gagan AI:\n{url}\n",
         open_browser=True
     )
 

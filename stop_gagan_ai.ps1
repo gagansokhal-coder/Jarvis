@@ -1,5 +1,5 @@
 # =====================================================================
-# Gagan AI (JARVIS) — Stop Background Services
+# Gagan AI — Stop Background Services
 # =====================================================================
 
 $WorkspaceRoot = $PSScriptRoot

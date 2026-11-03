@@ -1,4 +1,4 @@
-# setup_scheduled_tasks.ps1 - Registers JARVIS routines in Windows Task Scheduler
+# setup_scheduled_tasks.ps1 - Registers Gagan AI routines in Windows Task Scheduler
 $ErrorActionPreference = "Stop"
 
 $workspace = "D:\Desktop\gaganAI"
@@ -19,7 +19,7 @@ End If
 "@
 Set-Content -Path $vbsPath -Value $vbsContent -Encoding UTF8
 
-function Register-JarvisTask {
+function Register-GaganTask {
     param (
         [string]$TaskName,
         [string]$DailyTime,
@@ -38,14 +38,14 @@ function Register-JarvisTask {
         Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
     } catch {}
 
-    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "JARVIS AI Autonomous Routine: $RoutineName" | Out-Null
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Gagan AI Autonomous Routine: $RoutineName" | Out-Null
     Write-Host "✅ Registered Task: $TaskName (Daily at $DailyTime -> $RoutineName)"
 }
 
-Write-Host "Registering JARVIS Autonomous Routines in Windows Task Scheduler..."
-Register-JarvisTask -TaskName "JARVIS-Morning-Briefing" -DailyTime "07:00" -RoutineName "morning-briefing"
-Register-JarvisTask -TaskName "JARVIS-Email-Digest-Morning" -DailyTime "09:00" -RoutineName "email-digest"
-Register-JarvisTask -TaskName "JARVIS-Email-Digest-Evening" -DailyTime "18:00" -RoutineName "email-digest"
+Write-Host "Registering Gagan AI Autonomous Routines in Windows Task Scheduler..."
+Register-GaganTask -TaskName "Gagan-Morning-Briefing" -DailyTime "07:00" -RoutineName "morning-briefing"
+Register-GaganTask -TaskName "Gagan-Email-Digest-Morning" -DailyTime "09:00" -RoutineName "email-digest"
+Register-GaganTask -TaskName "Gagan-Email-Digest-Evening" -DailyTime "18:00" -RoutineName "email-digest"
 
-Write-Host "`nAll JARVIS scheduled routines registered successfully!"
+Write-Host "`nAll Gagan AI scheduled routines registered successfully!"
 

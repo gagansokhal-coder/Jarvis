@@ -1,8 +1,8 @@
 @echo off
-title JARVIS - Connect Google Accounts
+title Gagan AI - Connect Google Accounts
 cd /d "%~dp0"
 echo ========================================================
-echo   JARVIS Multi-Account Google Connection
+echo   Gagan AI Multi-Account Google Connection
 echo ========================================================
 echo.
 echo Current connected accounts:

@@ -1,5 +1,5 @@
 # =====================================================================
-# Gagan AI (JARVIS) — Enable 24/7 Autostart on Windows Login
+# Gagan AI — Enable 24/7 Autostart on Windows Login
 # =====================================================================
 
 $WorkspaceRoot = $PSScriptRoot

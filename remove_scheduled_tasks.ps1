@@ -1,10 +1,10 @@
-# remove_scheduled_tasks.ps1 - Removes JARVIS routines from Windows Task Scheduler
-$tasks = @("JARVIS-Morning-Briefing", "JARVIS-Email-Digest-Morning", "JARVIS-Email-Digest-Evening")
+# remove_scheduled_tasks.ps1 - Removes Gagan AI routines from Windows Task Scheduler
+$tasks = @("Gagan-Morning-Briefing", "Gagan-Email-Digest-Morning", "Gagan-Email-Digest-Evening")
 foreach ($t in $tasks) {
     try {
         Unregister-ScheduledTask -TaskName $t -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
         Write-Host "Removed task: $t"
     } catch {}
 }
-Write-Host "All JARVIS scheduled tasks removed."
+Write-Host "All Gagan AI scheduled tasks removed."
 

@@ -150,7 +150,7 @@ if __name__ == '__main__':
     briefing = generate_morning_briefing()
 
     print("\n" + "=" * 60)
-    print("           JARVIS MORNING BRIEFING PREVIEW")
+    print("           GAGAN AI MORNING BRIEFING PREVIEW")
     print("=" * 60)
     print(briefing)
     print("=" * 60 + "\n")

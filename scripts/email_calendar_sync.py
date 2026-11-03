@@ -303,7 +303,7 @@ def sync_events_from_emails():
 
             # Create event on Google Calendar
             description = (
-                f"Auto-synced by JARVIS AI\n"
+                f"Auto-synced by Gagan AI\n"
                 f"Source Account: {email_addr}\n"
                 f"Sender: {clean_sender}\n"
                 f"Original Subject: {subject}\n\n"
@@ -363,7 +363,7 @@ def sync_events_from_emails():
 
     # Send Telegram notification if new events were added
     if newly_added:
-        lines = [f"📅 *JARVIS AUTO-CALENDAR SYNC* ({len(newly_added)} new event{'s' if len(newly_added) > 1 else ''} added)\n"]
+        lines = [f"📅 *GAGAN AI AUTO-CALENDAR SYNC* ({len(newly_added)} new event{'s' if len(newly_added) > 1 else ''} added)\n"]
         for item in newly_added:
             venue_txt = f" (📍 {item['venue']})" if item['venue'] else ""
             lines.append(f"• *{item['title']}*")

@@ -71,6 +71,6 @@ def send_telegram_message(text, chat_id=None, parse_mode="Markdown"):
         raise RuntimeError(f"Telegram API Error ({e.code}): {err_body}")
 
 if __name__ == '__main__':
-    msg = sys.argv[1] if len(sys.argv) > 1 else "🤖 JARVIS Test Message"
+    msg = sys.argv[1] if len(sys.argv) > 1 else "🤖 Gagan AI Test Message"
     res = send_telegram_message(msg)
     print(f"Message delivered to Telegram! Message ID: {res['message_id']}")

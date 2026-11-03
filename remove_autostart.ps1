@@ -1,5 +1,5 @@
 # =====================================================================
-# Gagan AI (JARVIS) — Disable Autostart on Windows Login
+# Gagan AI — Disable Autostart on Windows Login
 # =====================================================================
 
 $startupFolder = [Environment]::GetFolderPath("Startup")

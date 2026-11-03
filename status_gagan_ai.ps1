@@ -1,5 +1,5 @@
 # =====================================================================
-# Gagan AI (JARVIS) — Service Status Check
+# Gagan AI — Service Status Check
 # =====================================================================
 
 $WorkspaceRoot = $PSScriptRoot

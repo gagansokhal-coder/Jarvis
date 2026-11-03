@@ -84,7 +84,7 @@ def process_new_email(msg_data, account_email, cal_service, cal_account):
             if not is_event_already_on_calendar(cal_service, clean_sub, start_dt, end_dt):
                 event_body = {
                     'summary': event_title,
-                    'description': f"Auto-synced by JARVIS AI Watcher\nSource: {account_email}\nFrom: {clean_sender}\n\nSnippet: {snippet}",
+                    'description': f"Auto-synced by Gagan AI Watcher\nSource: {account_email}\nFrom: {clean_sender}\n\nSnippet: {snippet}",
                     'location': venue or ("NIT Jalandhar Campus" if is_nitj else ""),
                     'start': {'dateTime': start_dt.isoformat(), 'timeZone': 'Asia/Kolkata'},
                     'end': {'dateTime': end_dt.isoformat(), 'timeZone': 'Asia/Kolkata'},
@@ -220,7 +220,7 @@ def watch_cycle(state, cal_service, cal_account):
 
 def run_watcher(single_pass=False):
     print("=" * 60)
-    print("      JARVIS REAL-TIME EMAIL & CALENDAR WATCHER DAEMON")
+    print("      GAGAN AI REAL-TIME EMAIL & CALENDAR WATCHER DAEMON")
     print("=" * 60)
     print(f"Poll Interval: {POLL_INTERVAL_SECONDS} seconds")
     print(f"Mode: {'Single Pass (One-off check)' if single_pass else 'Continuous 24/7 Background'}")
