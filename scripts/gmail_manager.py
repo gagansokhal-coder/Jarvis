@@ -156,7 +156,25 @@ def categorize_email(sender, subject, snippet, body):
         "requires_reply": requires_reply
     }
 
-def get_unread_emails_for_account(acc, max_results=5, query="is:unread"):
+def mark_messages_as_read(service, message_ids):
+    if not message_ids:
+        return
+    try:
+        service.users().messages().batchModify(
+            userId='me',
+            body={
+                'ids': message_ids,
+                'removeLabelIds': ['UNREAD']
+            }
+        ).execute()
+    except Exception as e:
+        for mid in message_ids:
+            try:
+                service.users().messages().modify(userId='me', id=mid, body={'removeLabelIds': ['UNREAD']}).execute()
+            except Exception:
+                pass
+
+def get_unread_emails_for_account(acc, max_results=5, query="is:unread", mark_as_read=True):
     email_acc = acc["email"]
     token_file = acc["token_file"]
 
@@ -205,9 +223,14 @@ def get_unread_emails_for_account(acc, max_results=5, query="is:unread"):
             "requires_reply": cat_info["requires_reply"]
         })
 
+    # Automatically mark read if requested
+    if mark_as_read and emails:
+        msg_ids = [e["id"] for e in emails]
+        mark_messages_as_read(service, msg_ids)
+
     return {"account": email_acc, "error": None, "emails": emails}
 
-def get_all_unread_emails(max_per_account=5):
+def get_all_unread_emails(max_per_account=5, mark_as_read=True):
     config = load_accounts_config()
     accounts = [a for a in config.get("accounts", []) if a.get("enabled", True)]
     
@@ -215,7 +238,7 @@ def get_all_unread_emails(max_per_account=5):
     total_unread = 0
 
     for acc in accounts:
-        res = get_unread_emails_for_account(acc, max_results=max_per_account)
+        res = get_unread_emails_for_account(acc, max_results=max_per_account, mark_as_read=mark_as_read)
         all_results.append(res)
         total_unread += len(res.get("emails", []))
 
@@ -224,6 +247,31 @@ def get_all_unread_emails(max_per_account=5):
         "total_unread": total_unread,
         "results": all_results
     }
+
+def mark_all_inboxes_read():
+    config = load_accounts_config()
+    accounts = [a for a in config.get("accounts", []) if a.get("enabled", True)]
+    total_marked = 0
+
+    print("Marking all unread emails across all 6 connected accounts as read...")
+    for acc in accounts:
+        email_acc = acc["email"]
+        try:
+            service = get_gmail_service_for_token(acc["token_file"])
+            res = service.users().messages().list(userId='me', q="is:unread", maxResults=50).execute()
+            messages = res.get('messages', [])
+            if messages:
+                ids = [m['id'] for m in messages]
+                mark_messages_as_read(service, ids)
+                print(f"✅ {email_acc}: Marked {len(ids)} unread messages as READ.")
+                total_marked += len(ids)
+            else:
+                print(f"✨ {email_acc}: Already 0 unread messages.")
+        except Exception as e:
+            print(f"⚠️ {email_acc} error: {e}")
+
+    print(f"\nCompleted: {total_marked} messages marked as read across all inboxes.")
+    return total_marked
 
 def format_telegram_summary(data):
     total = data.get("total_unread", 0)
@@ -367,8 +415,16 @@ if __name__ == '__main__':
 
     if command == "list":
         limit = int(args[1]) if len(args) > 1 else 5
-        data = get_all_unread_emails(max_per_account=limit)
+        data = get_all_unread_emails(max_per_account=limit, mark_as_read=True)
         print(format_telegram_summary(data))
+
+    elif command == "preview":
+        limit = int(args[1]) if len(args) > 1 else 5
+        data = get_all_unread_emails(max_per_account=limit, mark_as_read=False)
+        print(format_telegram_summary(data))
+
+    elif command == "mark-all-read":
+        mark_all_inboxes_read()
 
     elif command == "json":
         limit = int(args[1]) if len(args) > 1 else 5

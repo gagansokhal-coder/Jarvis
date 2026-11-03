@@ -33,7 +33,7 @@ def run_routine(routine_name):
         print(f"Morning briefing delivered! Msg ID: {res.get('message_id')}")
 
     elif routine_name == "email-digest":
-        data = get_all_unread_emails(max_per_account=5)
+        data = get_all_unread_emails(max_per_account=5, mark_as_read=True)
         if data.get("total_unread", 0) > 0:
             msg = f"📬 *EMAIL DIGEST* ({now_ist.strftime('%I:%M %p IST')})\n\n" + format_telegram_summary(data)
             res = send_telegram_message(msg)

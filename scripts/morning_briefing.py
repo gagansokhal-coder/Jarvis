@@ -34,9 +34,9 @@ def generate_morning_briefing():
     except Exception as e:
         week_events = []
 
-    # 2. Fetch Unread Emails across all accounts
+    # 2. Fetch Unread Emails across all accounts and mark as read
     try:
-        email_data = get_all_unread_emails(max_per_account=5)
+        email_data = get_all_unread_emails(max_per_account=10, mark_as_read=True)
     except Exception as e:
         email_data = {"accounts_count": 0, "total_unread": 0, "results": []}
         print(f"Gmail fetch error: {e}", file=sys.stderr)
@@ -161,3 +161,4 @@ if __name__ == '__main__':
         print(f"✅ Briefing successfully delivered to Telegram! Message ID: {res['message_id']}")
     else:
         print("Dry run complete (not sent to Telegram).")
+
