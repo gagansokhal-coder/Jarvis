@@ -1,6 +1,6 @@
-# Phase 3: Voice — "Hey Jarvis" Wake Word + Voice Pipeline
+# Phase 3: Voice — "Hey Gagan" Wake Word + Voice Pipeline
 
-> **Priority:** 🟡 HIGH — The JARVIS experience
+> **Priority:** 🟡 HIGH — The Gagan AI voice experience
 > **Estimated Time:** 3–4 days
 > **Dependencies:** Phase 1 COMPLETE
 > **Status:** 🔲 NOT STARTED
@@ -9,14 +9,14 @@
 
 ## Overview
 
-This phase adds the iconic JARVIS voice interface:
-1. **OpenWakeWord** — Always-listening "Hey Jarvis" detector (~50 MB RAM)
+This phase adds the iconic Gagan AI voice interface:
+1. **OpenWakeWord** — Always-listening "Hey Gagan" detector (~50 MB RAM)
 2. **whisper.cpp** — Local speech-to-text (~150 MB RAM)
 3. **Piper TTS** — Offline text-to-speech (~80 MB RAM)
 4. **Edge-TTS** — Online premium voices (zero RAM, needs internet)
 5. **Bridge Script** — Glues everything together into a voice loop
 
-After Phase 3, you can say "Hey Jarvis, check my emails" and hear a
+After Phase 3, you can say "Hey Gagan, check my emails" and hear a
 spoken response — completely hands-free.
 
 ---
@@ -65,27 +65,27 @@ pip install openwakeword
 
 ### Download Pre-trained Models
 
-OpenWakeWord comes with default models. For "Hey Jarvis", you have two options:
+OpenWakeWord comes with default models. For "Hey Gagan", you have two options:
 
-**Option A: Use built-in "hey_jarvis" model (if available)**
+**Option A: Quick test with built-in model**
 
 ```python
-# Test if the default model works:
+# Test if a default model works:
 python -c "
 from openwakeword.model import Model
-model = Model(wakeword_models=['hey_jarvis_v0.1'])
+model = Model()
 print('Model loaded successfully!')
 "
 ```
 
-**Option B: Train custom "Hey Jarvis" wake word (recommended)**
+**Option B: Train custom "Hey Gagan" wake word (recommended)**
 
 1. Go to https://colab.research.google.com
 2. Open the OpenWakeWord training notebook:
    `https://github.com/dscripka/openWakeWord/blob/main/notebooks/`
-3. Follow the training guide to create a custom "Hey Jarvis" model
+3. Follow the training guide to create a custom "Hey Gagan" model
 4. Download the trained `.onnx` model
-5. Save to: `d:\Desktop\gaganAI\voice\wakeword\hey_jarvis.onnx`
+5. Save to: `d:\Desktop\gaganAI\voice\wakeword\hey_gagan.onnx`
 
 ### Test Wake Word Detection
 
@@ -99,7 +99,7 @@ from openwakeword.model import Model
 
 # Load model
 model = Model(
-    wakeword_models=["hey_jarvis_v0.1"],  # or path to custom model
+    wakeword_models=["voice/wakeword/hey_gagan.onnx"],  # or built-in model
     inference_framework="onnx"
 )
 
@@ -119,7 +119,7 @@ stream = audio.open(
     frames_per_buffer=CHUNK
 )
 
-print("🎤 Listening for 'Hey Jarvis'... (Ctrl+C to stop)")
+print("🎤 Listening for 'Hey Gagan'... (Ctrl+C to stop)")
 
 try:
     while True:
@@ -149,7 +149,7 @@ python voice\test_wakeword.py
 > `pip install pipwin && pipwin install pyaudio`
 > Or download `.whl` from https://www.lfd.uci.edu/~gohlke/pythonlibs/
 
-**✅ Checkpoint:** Saying "Hey Jarvis" into your mic triggers a detection event.
+**✅ Checkpoint:** Saying "Hey Gagan" into your mic triggers a detection event.
 
 ---
 
@@ -317,7 +317,7 @@ from openwakeword.model import Model
 # CONFIGURATION
 # ============================================================
 
-WAKEWORD_MODEL = "hey_gagan.onnx"  # custom trained model (or hey_jarvis_v0.1)
+WAKEWORD_MODEL = "hey_gagan.onnx"  # custom trained model
 WAKEWORD_THRESHOLD = 0.5
 WHISPER_BINARY = r"d:\Desktop\gaganAI\voice\stt\main.exe"
 WHISPER_MODEL = r"d:\Desktop\gaganAI\voice\stt\ggml-base.en.bin"

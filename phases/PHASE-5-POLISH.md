@@ -35,7 +35,7 @@ Create `d:\Desktop\gaganAI\memory\vector_store.py`:
 
 ```python
 """
-JARVIS persistent vector memory.
+Gagan AI persistent vector memory.
 Stores and retrieves conversation context using embeddings.
 """
 import chromadb
@@ -51,7 +51,7 @@ client = chromadb.PersistentClient(
 # Collections
 conversations = client.get_or_create_collection(
     name="conversations",
-    metadata={"description": "All JARVIS conversations"}
+    metadata={"description": "All Gagan AI conversations"}
 )
 
 knowledge = client.get_or_create_collection(
@@ -107,7 +107,7 @@ def search_knowledge(query: str, n_results: int = 3) -> list:
 ### Pre-populate Knowledge Base
 
 ```python
-# Run once to seed JARVIS with personal knowledge:
+# Run once to seed Gagan AI with personal knowledge:
 from memory.vector_store import add_knowledge
 
 # College info
@@ -140,13 +140,13 @@ Create `d:\Desktop\gaganAI\memory\history.py`:
 
 ```python
 """
-SQLite-based conversation history for JARVIS.
+SQLite-based conversation history for Gagan AI.
 Stores full conversation logs, email records, and audit trails.
 """
 import sqlite3
 from datetime import datetime
 
-DB_PATH = "d:/Desktop/gaganAI/memory/jarvis.db"
+DB_PATH = "d:/Desktop/gaganAI/memory/gagan.db"
 
 
 def init_db():
@@ -225,7 +225,7 @@ init_db()
 
 ## Step 5.3: Oracle Cloud Always-On Hosting (Optional)
 
-> This step is OPTIONAL. It lets JARVIS respond on Telegram even when
+> This step is OPTIONAL. It lets Gagan respond on Telegram even when
 > your laptop is off, using Oracle Cloud's free ARM VM.
 
 ### Register for Oracle Cloud
@@ -290,7 +290,7 @@ nano .env  # Paste your credentials
 
 # Start with pm2 for auto-restart
 sudo npm install -g pm2
-pm2 start npm --name jarvis -- start
+pm2 start npm --name gagan -- start
 pm2 save
 pm2 startup
 ```
@@ -419,7 +419,7 @@ OLLAMA_KEEP_ALIVE=5m         # Unload after 5 minutes idle
 
 ```python
 """
-Template for a custom JARVIS skill.
+Template for a custom Gagan AI skill.
 Save in: d:\Desktop\gaganAI\automation\skills\your_skill.py
 """
 

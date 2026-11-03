@@ -346,7 +346,7 @@ Desktop.ini
 ```powershell
 cd d:\Desktop\gaganAI
 git init
-git add .gitignore MEMORY.md JARVIS-AI-Strategy.md phases/
+git add .gitignore MEMORY.md *.md phases/
 git commit -m "Initial project setup: strategy, memory, and phase plans"
 ```
 

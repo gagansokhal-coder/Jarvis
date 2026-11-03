@@ -34,7 +34,7 @@ briefing" works automatically.
 
 1. Go to https://console.cloud.google.com
 2. Click "Select a project" → "New Project"
-3. Name: `jarvis-personal-assistant`
+3. Name: `gagan-ai-assistant`
 4. Organization: No organization
 5. Click "Create"
 
@@ -53,7 +53,7 @@ In the Google Cloud Console:
 ```
 1. Go to "APIs & Services" → "OAuth consent screen"
 2. User Type: External → Create
-3. App name: "JARVIS Personal Assistant"
+3. App name: "Gagan AI Assistant"
 4. User support email: your-email@gmail.com
 5. Developer contact: your-email@gmail.com
 6. Click "Save and Continue"
@@ -78,7 +78,7 @@ In the Google Cloud Console:
 1. Go to "APIs & Services" → "Credentials"
 2. Click "Create Credentials" → "OAuth client ID"
 3. Application type: "Desktop app"
-4. Name: "JARVIS Desktop"
+4. Name: "Gagan AI Desktop"
 5. Click "Create"
 6. Download the JSON file
 7. Save as: d:\Desktop\gaganAI\credentials\client_secret.json

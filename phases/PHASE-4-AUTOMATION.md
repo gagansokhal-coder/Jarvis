@@ -144,12 +144,12 @@ await browse("Go to github.com/trending, find the top 3 trending repositories, a
 import keyring
 
 # Save (run once):
-keyring.set_password("jarvis-college-portal", "username", "your-roll-number")
-keyring.set_password("jarvis-college-portal", "password", "your-password")
+keyring.set_password("gagan-college-portal", "username", "your-roll-number")
+keyring.set_password("gagan-college-portal", "password", "your-password")
 
 # Retrieve in automation scripts:
-username = keyring.get_password("jarvis-college-portal", "username")
-password = keyring.get_password("jarvis-college-portal", "password")
+username = keyring.get_password("gagan-college-portal", "username")
+password = keyring.get_password("gagan-college-portal", "password")
 ```
 
 ```powershell
@@ -174,8 +174,8 @@ PORTAL_URL = "https://your-college-portal-url.ac.in"  # UPDATE THIS
 
 def check_portal():
     """Login to college portal and extract information."""
-    username = keyring.get_password("jarvis-college-portal", "username")
-    password = keyring.get_password("jarvis-college-portal", "password")
+    username = keyring.get_password("gagan-college-portal", "username")
+    password = keyring.get_password("gagan-college-portal", "password")
 
     if not username or not password:
         return "❌ College portal credentials not set. Run setup first."
