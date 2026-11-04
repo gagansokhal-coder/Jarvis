@@ -31,12 +31,31 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WAKEWORD_DIR = os.path.join(BASE_DIR, 'voice', 'wakeword')
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
+sys.path.insert(0, BASE_DIR)
 sys.path.insert(0, os.path.join(BASE_DIR, 'voice'))
-from tts_engine import speak, detect_language
-from stt_engine import transcribe_audio_numpy
-
 sys.path.insert(0, os.path.join(BASE_DIR, 'scripts'))
-from telegram_sender import send_telegram_message
+
+try:
+    from voice.tts_engine import speak, detect_language
+    from voice.stt_engine import transcribe_audio_numpy
+except ImportError:
+    from tts_engine import speak, detect_language
+    from stt_engine import transcribe_audio_numpy
+
+try:
+    from scripts.telegram_sender import send_telegram_message
+except ImportError:
+    from telegram_sender import send_telegram_message
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+
+try:
+    from openwakeword.model import Model as OwwModel
+except ImportError:
+    OwwModel = None
 
 # Audio parameters
 SAMPLE_RATE = 16000
@@ -255,15 +274,78 @@ def verify_identity() -> bool:
         print(f"Telegram alert error: {e}", file=sys.stderr)
     return False
 
+def wait_for_wake_up(oww_model=None, threshold=0.40):
+    """Wait for acoustic wake phrase ('Hey Gagan') or keyboard press."""
+    if oww_model:
+        print("\n💤 [Standby] Listening for 'Hey Gagan' / 'Hey Gagan Rajput' (or press [ENTER] to talk)...")
+    else:
+        print("\n💤 [Standby] Listening for wake-up: Press [ENTER] or type command...")
+
+    # Flush stale audio from queue
+    while not audio_queue.empty():
+        try:
+            audio_queue.get_nowait()
+        except queue.Empty:
+            break
+
+    buffer = np.array([], dtype=np.int16)
+    chunk_size = 1280  # 80ms at 16kHz
+
+    while True:
+        # Non-blocking keyboard check on Windows
+        if msvcrt and msvcrt.kbhit():
+            user_input = input("\n>> Keyboard prompt entered (or press ENTER): ").strip()
+            return True, user_input
+
+        if oww_model is not None:
+            try:
+                data = audio_queue.get(timeout=0.08)
+            except queue.Empty:
+                continue
+
+            int16_chunk = (data.flatten() * 32767).astype(np.int16)
+            buffer = np.concatenate((buffer, int16_chunk))
+
+            while len(buffer) >= chunk_size:
+                frame = buffer[:chunk_size]
+                buffer = buffer[chunk_size:]
+
+                pred = oww_model.predict(frame)
+                score = pred.get('hey_gagan', 0.0)
+
+                if score >= threshold:
+                    print(f"\n⚡ Wake Word Detected: 'Hey Gagan' (Confidence: {score:.2f})")
+                    oww_model.reset()
+                    buffer = np.array([], dtype=np.int16)
+                    while not audio_queue.empty():
+                        try:
+                            audio_queue.get_nowait()
+                        except queue.Empty:
+                            break
+                    return True, ""
+        else:
+            user_input = input(">> Press [ENTER] to talk: ").strip()
+            return True, user_input
+
 def run_voice_loop():
     print("=" * 60)
     print("       GAGAN AI ADVANCED VOICE & SECURITY SYSTEM")
     print("=" * 60)
     print("Multi-Wake Phrases: 'Hey Gagan', 'Hey Gagan Rajput', 'Gagan'")
     print(f"Security Challenge: {'ACTIVE (Who are you?)' if SECURITY_CHALLENGE_ACTIVE else 'DISABLED'}")
-    print("Follow-up Window: 7.0 seconds")
+    print("Follow-up Window: 8.0 seconds")
     print("Languages: English, Hindi, Punjabi, 90+ languages")
     print("=" * 60)
+
+    # Load custom openWakeWord model
+    model_path = os.path.join(WAKEWORD_DIR, 'hey_gagan.onnx')
+    oww_model = None
+    if OwwModel is not None and os.path.exists(model_path):
+        try:
+            oww_model = OwwModel(wakeword_models=[model_path], inference_framework="onnx")
+            print("✅ Custom OpenWakeWord Engine Loaded: 'Hey Gagan' & 'Hey Gagan Rajput'")
+        except Exception as e:
+            print(f"⚠️ Could not initialize openWakeWord: {e}")
 
     print("\n🟢 Microphone open and listening... (Ctrl+C to stop)")
 
@@ -272,10 +354,7 @@ def run_voice_loop():
     with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, callback=audio_callback):
         while True:
             try:
-                print("\n💤 [Standby] Listening for wake-up... (Press ENTER or type prompt to activate)")
-                
-                user_input = input(">> Press [ENTER] to talk (or type command): ")
-                direct_text = user_input.strip()
+                activated, direct_text = wait_for_wake_up(oww_model, threshold=0.40)
 
                 # If activated:
                 if not direct_text:
