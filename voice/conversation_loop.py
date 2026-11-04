@@ -14,6 +14,7 @@ import sys
 import time
 import re
 import queue
+import difflib
 import requests
 import numpy as np
 import sounddevice as sd
@@ -37,13 +38,17 @@ from telegram_sender import send_telegram_message
 # Audio parameters
 SAMPLE_RATE = 16000
 CHANNELS = 1
-SILENCE_THRESHOLD = 0.015  # RMS energy threshold for silence
-SILENCE_DURATION_SEC = 1.5 # Consecutive silence seconds to finish user turn
+SILENCE_THRESHOLD = 0.007  # Sensitive RMS energy threshold for normal speech
+SILENCE_DURATION_SEC = 1.8 # Allow natural pauses between words before concluding turn
 FOLLOWUP_WINDOW_SEC = 7.0  # Seconds to wait for follow-up before sleeping
 
 # Security Settings
 SECURITY_CHALLENGE_ACTIVE = True  # Ask "Who are you?" upon wake-up
-AUTHORIZED_IDENTITIES = ["bhatti rajput", "code with baba","follower of bholenath"]
+AUTHORIZED_IDENTITIES = [
+    "bhatti rajput", "code with baba", "follower of bholenath",
+    "bhattirajput", "bhatirajput", "bhati rajput", "codewithbaba",
+    "follower of bhole nath", "bholenath", "gagan rajput", "gagan"
+]
 
 audio_queue = queue.Queue()
 
@@ -78,6 +83,13 @@ def query_ollama(prompt: str, context: list = None) -> tuple[str, list]:
 
 def record_utterance(max_duration: float = 12.0, initial_timeout: float = 6.0) -> np.ndarray:
     """Record speech from microphone until silence is detected."""
+    # Flush any stale audio from earlier TTS or ambient noise
+    while not audio_queue.empty():
+        try:
+            audio_queue.get_nowait()
+        except queue.Empty:
+            break
+
     chunks = []
     silent_time = 0.0
     has_started_speaking = False
@@ -113,43 +125,79 @@ def record_utterance(max_duration: float = 12.0, initial_timeout: float = 6.0) -
         return np.concatenate(chunks, axis=0).flatten()
     return np.array([], dtype=np.float32)
 
+def is_identity_match(spoken_text: str, authorized_list: list) -> bool:
+    """Intelligent passphrase matching (handles spacing, phonetics, tokens, and fuzzy matching)."""
+    spoken_clean = re.sub(r'[^\w\s]', '', spoken_text.lower()).strip()
+    spoken_nospace = re.sub(r'\s+', '', spoken_clean)
+    if not spoken_nospace:
+        return False
+
+    for auth in authorized_list:
+        auth_clean = re.sub(r'[^\w\s]', '', auth.lower()).strip()
+        auth_nospace = re.sub(r'\s+', '', auth_clean)
+
+        # 1. Exact or substring match (with or without spaces)
+        if auth_clean in spoken_clean or spoken_clean in auth_clean:
+            return True
+        if auth_nospace in spoken_nospace or spoken_nospace in auth_nospace:
+            return True
+
+        # 2. Key distinctive tokens (e.g. bhatti, rajput, bholenath, baba)
+        auth_tokens = [t for t in auth_clean.split() if len(t) >= 4]
+        if auth_tokens and any(token in spoken_clean for token in auth_tokens):
+            return True
+
+        # 3. Fuzzy ratio match (tolerates minor STT character differences)
+        ratio = difflib.SequenceMatcher(None, spoken_nospace, auth_nospace).ratio()
+        if ratio >= 0.70:
+            return True
+
+    return False
+
 def verify_identity() -> bool:
-    """Security Protocol: Asks 'Who are you?' and checks response."""
-    print("\n🔒 [Security Challenge] Gagan AI: 'Who are you?'")
-    speak("Who are you?", blocking=True)
+    """Security Protocol: Asks 'Who are you?' and checks response with retry tolerance."""
+    max_attempts = 2
+    for attempt in range(1, max_attempts + 1):
+        if attempt == 1:
+            print("\n🔒 [Security Challenge] Gagan AI: 'Who are you?'")
+            speak("Who are you?", blocking=True)
+        else:
+            print("\n⚠️ [Security Retry] Passcode not clear. Please speak again:")
+            speak("Passcode not clear. Please state your identity again.", blocking=True)
 
-    print("🎤 Listening for identity/passcode...")
-    audio = record_utterance(max_duration=6.0, initial_timeout=5.0)
-    if len(audio) == 0:
-        speak("No response received. Security lockout.", blocking=True)
-        return False
+        print("🎤 Listening for identity/passcode...")
+        audio = record_utterance(max_duration=6.0, initial_timeout=5.0)
+        if len(audio) == 0:
+            if attempt < max_attempts:
+                continue
+            speak("No response received. Security lockout.", blocking=True)
+            return False
 
-    stt_res = transcribe_audio_numpy(audio)
-    spoken_answer = stt_res.get("text", "").lower().strip()
-    spoken_clean = re.sub(r'[^\w\s]', '', spoken_answer)
-    print(f"🗣️ Identity response: \"{spoken_answer}\"")
+        stt_res = transcribe_audio_numpy(audio)
+        spoken_answer = stt_res.get("text", "").lower().strip()
+        print(f"🗣️ Identity response: \"{spoken_answer}\"")
 
-    is_authorized = any(ident in spoken_clean for ident in AUTHORIZED_IDENTITIES)
+        if is_identity_match(spoken_answer, AUTHORIZED_IDENTITIES):
+            print("✅ Identity verified! Access granted.")
+            speak("Identity confirmed. Welcome back, Gagan Rajput. What can I do for you?", blocking=True)
+            return True
+        else:
+            print(f"⚠️ Identity attempt {attempt} failed.")
 
-    if is_authorized:
-        print("✅ Identity verified! Access granted.")
-        speak("Identity confirmed. Welcome back, Gagan. What can I do for you?", blocking=True)
-        return True
-    else:
-        print("❌ Identity NOT recognized! Sending intruder alert to Telegram.")
-        speak("Access denied. Unauthorized voice request.", blocking=True)
-        try:
-            alert_msg = (
-                f"🚨 *GAGAN AI SECURITY ALERT*\n\n"
-                f"An unrecognized person attempted to activate Gagan AI via voice.\n"
-                f"• Spoken Identity: \"{spoken_answer}\"\n"
-                f"• Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                f"• Action: System locked & voice session terminated."
-            )
-            send_telegram_message(alert_msg)
-        except Exception as e:
-            print(f"Telegram alert error: {e}", file=sys.stderr)
-        return False
+    print("❌ Identity NOT recognized! Sending intruder alert to Telegram.")
+    speak("Access denied. Unauthorized voice request.", blocking=True)
+    try:
+        alert_msg = (
+            f"🚨 *GAGAN AI SECURITY ALERT*\n\n"
+            f"An unrecognized person attempted to activate Gagan AI via voice.\n"
+            f"• Spoken Identity: \"{spoken_answer}\"\n"
+            f"• Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"• Action: System locked & voice session terminated."
+        )
+        send_telegram_message(alert_msg)
+    except Exception as e:
+        print(f"Telegram alert error: {e}", file=sys.stderr)
+    return False
 
 def run_voice_loop():
     print("=" * 60)

@@ -21,6 +21,11 @@ except Exception:
 
 from faster_whisper import WhisperModel
 
+DEFAULT_INITIAL_PROMPT = (
+    "Gagan, Gagan Rajput, Bhatti Rajput, Code with Baba, follower of Bholenath. "
+    "Hinglish, Hindi, English, Punjabi conversation."
+)
+
 _MODEL_INSTANCE = None
 
 def get_whisper_model(model_size: str = "base", device: str = "cpu", compute_type: str = "int8"):
@@ -30,18 +35,20 @@ def get_whisper_model(model_size: str = "base", device: str = "cpu", compute_typ
         _MODEL_INSTANCE = WhisperModel(model_size, device=device, compute_type=compute_type)
     return _MODEL_INSTANCE
 
-def transcribe_audio_file(audio_path: str, language: str = None) -> dict:
+def transcribe_audio_file(audio_path: str, language: str = None, initial_prompt: str = None) -> dict:
     """
     Transcribe audio file.
     If language is None, Whisper automatically detects the spoken language.
     """
     model = get_whisper_model()
+    prompt = initial_prompt or DEFAULT_INITIAL_PROMPT
     segments, info = model.transcribe(
         audio_path,
         beam_size=5,
         language=language,
+        initial_prompt=prompt,
         vad_filter=True, # Filters out background silence
-        vad_parameters=dict(min_silence_duration_ms=500)
+        vad_parameters=dict(min_silence_duration_ms=400, threshold=0.4)
     )
 
     full_text = " ".join([segment.text for segment in segments]).strip()
@@ -54,7 +61,15 @@ def transcribe_audio_file(audio_path: str, language: str = None) -> dict:
     }
 
 def transcribe_audio_numpy(audio_array: np.ndarray, sample_rate: int = 16000, language: str = None) -> dict:
-    """Transcribe an in-memory numpy float32 audio buffer."""
+    """Transcribe an in-memory numpy float32 audio buffer with volume boost normalization."""
+    if len(audio_array) == 0:
+        return {"text": "", "language": "en", "language_probability": 0.0, "duration": 0.0}
+
+    # Volume normalization to boost quiet laptop microphones
+    max_val = np.max(np.abs(audio_array))
+    if max_val > 0.003:
+        audio_array = audio_array * (0.85 / max_val)
+
     fd, temp_wav = tempfile.mkstemp(suffix=".wav")
     os.close(fd)
     try:
