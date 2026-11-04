@@ -12,6 +12,9 @@ Features:
 import os
 import sys
 import time
+import datetime
+import json
+import subprocess
 import re
 import queue
 import difflib
@@ -39,8 +42,8 @@ from telegram_sender import send_telegram_message
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SILENCE_THRESHOLD = 0.007  # Sensitive RMS energy threshold for normal speech
-SILENCE_DURATION_SEC = 1.8 # Allow natural pauses between words before concluding turn
-FOLLOWUP_WINDOW_SEC = 7.0  # Seconds to wait for follow-up before sleeping
+SILENCE_DURATION_SEC = 2.4 # Generous 2.4s pause tolerance so thinking pauses don't cut off speech
+FOLLOWUP_WINDOW_SEC = 8.0  # 8.0 seconds active listening window for follow-up dialogue
 
 # Security Settings
 SECURITY_CHALLENGE_ACTIVE = True  # Ask "Who are you?" upon wake-up
@@ -57,19 +60,72 @@ def audio_callback(indata, frames, time_info, status):
         pass
     audio_queue.put(indata.copy())
 
-def query_ollama(prompt: str, context: list = None) -> tuple[str, list]:
-    """Query local Ollama for conversational AI response."""
-    system_prompt = (
-        "You are Gagan AI (or Gagan Rajput), a loyal, highly capable personal AI assistant. "
-        "Keep your spoken answers concise, direct, helpful, and natural (1 to 3 sentences maximum), "
-        "as your answer will be spoken out loud. Answer in the same language the user speaks to you."
+def get_today_tasks_context() -> str:
+    """Fetch real scheduled events for today from calendar_manager."""
+    try:
+        script_path = os.path.join(BASE_DIR, 'scripts', 'calendar_manager.py')
+        res = subprocess.run(
+            ['python', script_path, 'json'],
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=8
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            events = json.loads(res.stdout.strip())
+            if events:
+                lines = [f"• {e.get('start', '')} - {e.get('summary', '')}" for e in events]
+                return "Real Events on Gagan's Calendar Today:\n" + "\n".join(lines)
+            else:
+                return "Real Events: No calendar events or tasks scheduled for today."
+    except Exception:
+        pass
+    return "Calendar status: No pending tasks found."
+
+def build_system_prompt(user_query: str = "") -> str:
+    """Build real-time, context-aware prompt with live time and date."""
+    now = datetime.datetime.now()
+    current_time_str = now.strftime('%I:%M %p') # e.g. 11:30 PM
+    current_date_str = now.strftime('%A, %d %B %Y')
+    hour = now.hour
+
+    if 5 <= hour < 12:
+        period = "Morning"
+    elif 12 <= hour < 17:
+        period = "Afternoon"
+    elif 17 <= hour < 21:
+        period = "Evening"
+    else:
+        period = "Night"
+
+    tasks_info = ""
+    query_lower = user_query.lower()
+    if any(k in query_lower for k in ["task", "schedule", "today", "calendar", "meeting", "do today", "plan", "event"]):
+        tasks_info = f"\n\n{get_today_tasks_context()}"
+
+    prompt = (
+        f"You are Gagan AI, the elite personal AI assistant for Gagan Rajput.\n"
+        f"• Current Date: {current_date_str}\n"
+        f"• Current Time: {current_time_str} ({period})\n"
+        f"• CRITICAL RULE: It is currently {period.lower()} ({current_time_str}). NEVER say 'Good morning' or 'Good afternoon' when it is {period.lower()}!\n"
+        f"• Personality: Confident, direct, highly intelligent, loyal. Speak naturally in 1 to 2 concise sentences.\n"
+        f"• NEVER recite robotic canned lines like 'How may I assist you further today?' or 'Apologies for the oversight'.\n"
+        f"• If the user corrects you or hesitates, reply conversationally like a sharp human partner.\n"
+        f"• Answer in the same language the user speaks (English, Hindi, Punjabi, etc.)."
+        f"{tasks_info}"
     )
+    return prompt
+
+def query_ollama(prompt: str, context: list = None) -> tuple[str, list]:
+    """Query local Ollama for conversational AI response with real-time awareness."""
+    system_prompt = build_system_prompt(prompt)
     
     payload = {
         "model": "phi4-mini:latest",
         "prompt": prompt,
         "system": system_prompt,
         "stream": False,
+        "options": {
+            "temperature": 0.4,
+            "num_predict": 100
+        }
     }
     if context:
         payload["context"] = context
@@ -254,10 +310,10 @@ def run_voice_loop():
                 # 3. Speak response out loud
                 speak(ai_reply, blocking=True)
 
-                # 4. Continuous Follow-up Loop (7-second window)
+                # 4. Continuous Follow-up Loop (8-second window)
                 while True:
                     print(f"\n👂 [Follow-up Window: {FOLLOWUP_WINDOW_SEC}s] Listening for follow-up question...")
-                    followup_audio = record_utterance(max_duration=12.0, initial_timeout=FOLLOWUP_WINDOW_SEC)
+                    followup_audio = record_utterance(max_duration=14.0, initial_timeout=FOLLOWUP_WINDOW_SEC)
 
                     if len(followup_audio) == 0:
                         print("⏱️ Follow-up window timed out. Returning to standby.")
@@ -266,13 +322,27 @@ def run_voice_loop():
                     stt_followup = transcribe_audio_numpy(followup_audio)
                     followup_text = stt_followup.get("text", "").strip()
 
+                    # If empty noise or false click, do NOT break out of the session! Keep listening!
                     if not followup_text:
-                        break
+                        continue
+
+                    # Hesitation handler: If user said an incomplete hesitation (e.g. "I mean...", "Wait...", "Uh..."), don't interrupt!
+                    hesitations = ["i mean", "i mean...", "wait", "um", "uh", "actually", "so", "listen", "no i mean"]
+                    clean_check = re.sub(r'[^\w\s]', '', followup_text.lower()).strip()
+                    if clean_check in hesitations or (len(clean_check.split()) <= 2 and clean_check in ["i mean", "wait", "actually", "listen", "no"]):
+                        print(f"👂 User hesitating ('{followup_text}'). Waiting for complete thought...")
+                        more_audio = record_utterance(max_duration=10.0, initial_timeout=5.0)
+                        if len(more_audio) > 0:
+                            more_stt = transcribe_audio_numpy(more_audio)
+                            more_text = more_stt.get("text", "").strip()
+                            if more_text:
+                                followup_text = f"{followup_text} {more_text}"
+                                print(f"🗣️ Complete thought: \"{followup_text}\"")
 
                     print(f"🗣️ Follow-up: \"{followup_text}\"")
 
                     # Check for exit words
-                    if any(w in followup_text.lower() for w in ["thank you", "thanks", "bye", "goodbye", "stop", "that's all", "alvida", "dhanyavaad"]):
+                    if any(w in followup_text.lower() for w in ["thank you", "thanks", "bye", "goodbye", "stop", "that's all", "alvida", "dhanyavaad", "shut up", "bas"]):
                         print("👋 User ended conversation.")
                         speak("You're welcome, Gagan. I'm here whenever you need me.", blocking=True)
                         break

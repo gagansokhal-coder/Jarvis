@@ -28,11 +28,14 @@ DEFAULT_INITIAL_PROMPT = (
 
 _MODEL_INSTANCE = None
 
-def get_whisper_model(model_size: str = "base", device: str = "cpu", compute_type: str = "int8"):
+def get_whisper_model(model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
-        # Load model with lightweight int8 quantization
-        _MODEL_INSTANCE = WhisperModel(model_size, device=device, compute_type=compute_type)
+        # Load high-accuracy small model with lightweight int8 quantization
+        try:
+            _MODEL_INSTANCE = WhisperModel(model_size, device=device, compute_type=compute_type)
+        except Exception:
+            _MODEL_INSTANCE = WhisperModel("base", device=device, compute_type=compute_type)
     return _MODEL_INSTANCE
 
 def transcribe_audio_file(audio_path: str, language: str = None, initial_prompt: str = None) -> dict:
