@@ -44,8 +44,8 @@ notebook = {
                 "!wget -q -nc -O piper-sample-generator/models/en-us-libritts-high.pt 'https://github.com/rhasspy/piper-sample-generator/releases/download/v1.0.0/en-us-libritts-high.pt'\n",
                 "!git clone -q https://github.com/dscripka/openwakeword\n",
                 "\n",
-                "# 2. Install dependencies (with onnx, onnxscript, onnxruntime, soundfile)\n",
-                "!pip install -q onnx onnxscript onnxruntime soundfile\n",
+                "# 2. Install dependencies (with onnx, onnxscript, onnxruntime, soundfile, deep-phonemizer)\n",
+                "!pip install -q onnx onnxscript onnxruntime soundfile deep-phonemizer==0.0.19\n",
                 "!pip install -q mutagen==1.47.0 torchinfo==1.8.0 torchmetrics==1.2.0 speechbrain==0.5.14 audiomentations==0.33.0 torch-audiomentations==0.11.0 acoustics==0.2.6 pronouncing==0.2.0 datasets\n",
                 "!pip install -q --no-deps -e ./openwakeword\n",
                 "\n",
@@ -57,8 +57,10 @@ notebook = {
                 "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/melspectrogram.onnx -O ./openwakeword/openwakeword/resources/models/melspectrogram.onnx\n",
                 "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/melspectrogram.tflite -O ./openwakeword/openwakeword/resources/models/melspectrogram.tflite\n",
                 "\n",
-                "# 4. Download authentic CMUDict checkpoint (fixes AWS S3 403 error)\n",
+                "# 4. Download authentic CMUDict checkpoint into openwakeword/resources (fixes AWS S3 403 error)\n",
                 "!wget -q -nc https://huggingface.co/TaterTotterson/DeepPhonemizer/resolve/main/en_us_cmudict_forward.pt -O en_us_cmudict_forward.pt\n",
+                "!mkdir -p ./openwakeword/openwakeword/resources\n",
+                "!cp en_us_cmudict_forward.pt ./openwakeword/openwakeword/resources/\n",
                 "!cp en_us_cmudict_forward.pt ./openwakeword/\n",
                 "print('✅ Cell 1 Setup Complete!')\n"
             ]
@@ -133,7 +135,18 @@ notebook = {
                 "    gs_text = gs_text.replace('model = torch.load(model_path)', 'model = torch.load(model_path, weights_only=False)')\n",
                 "    with open(gs_file, 'w') as f:\n",
                 "        f.write(gs_text)\n",
-                "    print('✅ Patched generate_samples.py for PyTorch 2.6!')\n"
+                "    print('✅ Patched generate_samples.py for PyTorch 2.6!')\n",
+                "\n",
+                "# 4. Patch train.py for global PyTorch 2.6 weights_only=False\n",
+                "train_py_file = 'openwakeword/openwakeword/train.py'\n",
+                "if os.path.exists(train_py_file):\n",
+                "    with open(train_py_file, 'r') as f:\n",
+                "        t_code = f.read()\n",
+                "    if '_real_load' not in t_code:\n",
+                "        patch_hdr = 'import torch\\n_real_load = torch.load\\ntorch.load = lambda *args, **kwargs: _real_load(*args, **{**kwargs, \\'weights_only\\': False})\\n'\n",
+                "        with open(train_py_file, 'w') as f:\n",
+                "            f.write(patch_hdr + t_code)\n",
+                "        print('✅ Patched train.py for PyTorch 2.6 weights_only=False!')\n"
             ]
         },
         {
