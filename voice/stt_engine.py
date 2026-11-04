@@ -8,6 +8,17 @@ import sys
 import tempfile
 import numpy as np
 import soundfile as sf
+
+# Patch PyAV if av.open doesn't accept or issues with metadata_errors in newer versions
+try:
+    import av
+    _orig_av_open = av.open
+    def _patched_av_open(*args, metadata_errors=None, **kwargs):
+        return _orig_av_open(*args, **kwargs)
+    av.open = _patched_av_open
+except Exception:
+    pass
+
 from faster_whisper import WhisperModel
 
 _MODEL_INSTANCE = None
@@ -66,3 +77,4 @@ if __name__ == '__main__':
         print(f"Transcription: {res['text']}")
     else:
         print("Whisper STT Engine ready. Pass a .wav/.mp3 file to transcribe.")
+

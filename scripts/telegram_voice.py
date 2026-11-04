@@ -76,3 +76,4 @@ if __name__ == '__main__':
     print(f"Sending voice note to Telegram: '{msg}'...")
     res = send_telegram_voice(msg, caption="🎙️ Gagan AI Voice Note")
     print(f"✅ Voice note delivered successfully! Message ID: {res['message_id']}")
+

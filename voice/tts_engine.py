@@ -84,3 +84,4 @@ if __name__ == '__main__':
     print(f"Speaking: '{test_phrase}'")
     speak(test_phrase)
     print("Done!")
+

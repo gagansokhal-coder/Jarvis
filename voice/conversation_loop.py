@@ -43,7 +43,7 @@ FOLLOWUP_WINDOW_SEC = 7.0  # Seconds to wait for follow-up before sleeping
 
 # Security Settings
 SECURITY_CHALLENGE_ACTIVE = True  # Ask "Who are you?" upon wake-up
-AUTHORIZED_IDENTITIES = ["gagan", "gagan rajput", "rajput", "its gagan", "it's gagan", "code 1008", "gagan here"]
+AUTHORIZED_IDENTITIES = ["bhatti rajput", "code with baba","follower of bholenath"]
 
 audio_queue = queue.Queue()
 

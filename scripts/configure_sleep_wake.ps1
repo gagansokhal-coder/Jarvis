@@ -45,3 +45,4 @@ Write-Host "     -> Check: 'Only allow a magic packet to wake the computer'" -Fo
 Write-Host "`n==========================================================" -ForegroundColor Cyan
 Write-Host "✅ Sleep & Wake configuration completed!" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Cyan
+
