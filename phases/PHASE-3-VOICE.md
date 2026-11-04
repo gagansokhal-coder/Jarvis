@@ -2,32 +2,31 @@
 
 > **Priority:** 🟡 HIGH — The Gagan AI voice experience
 > **Estimated Time:** 3–4 days
-> **Dependencies:** Phase 1 COMPLETE
-> **Status:** 🔲 NOT STARTED
+> **Dependencies:** Phase 1 & 2 COMPLETE
+> **Status:** 🟡 IN PROGRESS (Engines deployed; Option B training ready)
 
 ---
 
 ## Overview
 
 This phase adds the iconic Gagan AI voice interface:
-1. **OpenWakeWord** — Always-listening "Hey Gagan" detector (~50 MB RAM)
-2. **whisper.cpp** — Local speech-to-text (~150 MB RAM)
-3. **Piper TTS** — Offline text-to-speech (~80 MB RAM)
-4. **Edge-TTS** — Online premium voices (zero RAM, needs internet)
-5. **Bridge Script** — Glues everything together into a voice loop
-
-After Phase 3, you can say "Hey Gagan, check my emails" and hear a
-spoken response — completely hands-free.
+1. **OpenWakeWord** — Always-listening "Hey Gagan" detector (~50 MB RAM, Option B custom trained)
+2. **faster-whisper** — Fast local multilingual speech-to-text (English, Hindi, Punjabi, 90+ languages)
+3. **Edge-TTS** — Natural multilingual neural speech (Prabhat Indian English, Madhur Hindi, Ojas Punjabi, etc.)
+4. **Follow-Up Conversation Engine** — Continuous back-and-forth dialogue with 7s active listening window
+5. **Telegram Voice Messages** — Receive native neural voice notes on your phone
+6. **Sleep & Network Wake** — Wake laptop from Modern Standby (S0ix) over Wi-Fi/Ethernet
 
 ---
 
 ## Prerequisites
 
 - [x] Phase 1 complete (OpenClaw running, Telegram working)
-- [x] Python 3.11+ installed
-- [ ] Working microphone
-- [ ] Working speakers or headphones
-- [ ] ~1 GB disk space for models
+- [x] Phase 2 complete (6 Gmail inboxes + Google Calendar synced)
+- [x] Python 3.12 venv initialized with all voice packages
+- [x] Working microphone (Jack Mic Realtek Audio verified)
+- [x] Working speakers/headphones (Realtek Audio verified)
+- [x] ~1 GB disk space for models
 
 ---
 
