@@ -1,4 +1,4 @@
-﻿Set objShell = CreateObject("WScript.Shell")
+Set objShell = CreateObject("WScript.Shell")
 Set args = WScript.Arguments
 If args.Count > 0 Then
     cmd = """" & args(0) & """"

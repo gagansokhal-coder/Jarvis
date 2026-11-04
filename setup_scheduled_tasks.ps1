@@ -17,7 +17,7 @@ If args.Count > 0 Then
     objShell.Run cmd, 0, False
 End If
 "@
-Set-Content -Path $vbsPath -Value $vbsContent -Encoding UTF8
+[System.IO.File]::WriteAllText($vbsPath, $vbsContent, [System.Text.Encoding]::ASCII)
 
 function Register-GaganTask {
     param (
