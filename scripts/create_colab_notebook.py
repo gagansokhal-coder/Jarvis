@@ -1,0 +1,265 @@
+import json
+import os
+
+notebook = {
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# 🎙️ Gagan AI - Custom Wake Word Training (OpenWakeWord)\n",
+                "\n",
+                "Train a production-ready custom wake word model for **\"Hey Gagan\"** and **\"Hey Gagan Rajput\"**.\n",
+                "\n",
+                "### 🛠️ Pre-resolved Fixes in this Notebook:\n",
+                "- ✅ **Python 3.13 Compatibility**: Bypasses `speexdsp-ns` & `piper-phonemize` wheel issues using `--no-deps`.\n",
+                "- ✅ **Authentic CMUDict**: Replaces the broken AWS S3 403 URL with the verified Hugging Face checkpoint.\n",
+                "- ✅ **Pre-downloaded ONNX Backbones**: Automatically fetches `embedding_model` and `melspectrogram`.\n",
+                "- ✅ **Torchaudio/SoundFile Patch**: Fixes `AttributeError: module torchaudio has no attribute info` in `torch_audiomentations`.\n",
+                "- ✅ **Lightweight Fast Features**: Uses the 184 MB background feature set instead of 17.3 GB download.\n",
+                "- ✅ **ONNXScript Pre-installed**: Prevents export failure at Step 3 line 905.\n",
+                "- ✅ **Auto-Download**: Automatically downloads `hey_gagan.onnx` to your computer when finished.\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 📦 Cell 1: Environment Setup & Clone Repositories\n",
+                "Installs dependencies, clones repos, and downloads TTS models and ONNX backbone feature extractors."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 1. Clone repos\n",
+                "!git clone -q https://github.com/rhasspy/piper-sample-generator\n",
+                "!wget -q -nc -O piper-sample-generator/models/en_US-libritts_r-medium.pt 'https://github.com/rhasspy/piper-sample-generator/releases/download/v2.0.0/en_US-libritts_r-medium.pt'\n",
+                "!git clone -q https://github.com/dscripka/openwakeword\n",
+                "\n",
+                "# 2. Install dependencies (with onnx, onnxscript, soundfile)\n",
+                "!pip install -q onnx onnxscript soundfile\n",
+                "!pip install -q mutagen==1.47.0 torchinfo==1.8.0 torchmetrics==1.2.0 speechbrain==0.5.14 audiomentations==0.33.0 torch-audiomentations==0.11.0 acoustics==0.2.6 pronouncing==0.2.0 datasets\n",
+                "!pip install -q --no-deps -e ./openwakeword\n",
+                "\n",
+                "# 3. Download ONNX backbone models into openwakeword resources\n",
+                "import os\n",
+                "os.makedirs('./openwakeword/openwakeword/resources/models', exist_ok=True)\n",
+                "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/embedding_model.onnx -O ./openwakeword/openwakeword/resources/models/embedding_model.onnx\n",
+                "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/embedding_model.tflite -O ./openwakeword/openwakeword/resources/models/embedding_model.tflite\n",
+                "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/melspectrogram.onnx -O ./openwakeword/openwakeword/resources/models/melspectrogram.onnx\n",
+                "!wget -q -nc https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/melspectrogram.tflite -O ./openwakeword/openwakeword/resources/models/melspectrogram.tflite\n",
+                "\n",
+                "# 4. Download authentic CMUDict checkpoint (fixes AWS S3 403 error)\n",
+                "!wget -q -nc https://huggingface.co/TaterTotterson/DeepPhonemizer/resolve/main/en_us_cmudict_forward.pt -O en_us_cmudict_forward.pt\n",
+                "!cp en_us_cmudict_forward.pt ./openwakeword/\n",
+                "print('✅ Cell 1 Setup Complete!')\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 📥 Cell 2: Download Validation Background Features\n",
+                "Downloads the official precomputed openWakeWord negative audio features (~184 MB)."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "!wget -q -nc https://huggingface.co/datasets/davidscripka/openwakeword_features/resolve/main/validation_set_features.npy\n",
+                "print('✅ Validation background features downloaded!')\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🛠️ Cell 3: Apply Torchaudio / SoundFile Patch\n",
+                "Ensures `torch_audiomentations` uses `soundfile` instead of the deprecated `torchaudio.info`."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import site, os\n",
+                "patch_applied = False\n",
+                "for p in site.getsitepackages():\n",
+                "    io_file = os.path.join(p, 'torch_audiomentations', 'utils', 'io.py')\n",
+                "    if os.path.exists(io_file):\n",
+                "        with open(io_file, 'r') as f:\n",
+                "            content = f.read()\n",
+                "        if 'soundfile' not in content:\n",
+                "            patch_code = '''\n",
+                "class AudioMeta(tuple):\n",
+                "    def __new__(cls, frames, sample_rate):\n",
+                "        return super().__new__(cls, (frames, sample_rate))\n",
+                "    @property\n",
+                "    def num_frames(self): return self[0]\n",
+                "    @property\n",
+                "    def frames(self): return self[0]\n",
+                "    @property\n",
+                "    def sample_rate(self): return self[1]\n",
+                "    @property\n",
+                "    def samplerate(self): return self[1]\n",
+                "\n",
+                "class Audio:\n",
+                "    @staticmethod\n",
+                "    def get_audio_metadata(file_path):\n",
+                "        import soundfile as sf\n",
+                "        info = sf.info(str(file_path))\n",
+                "        return AudioMeta(info.frames, info.samplerate)\n",
+                "'''\n",
+                "            with open(io_file, 'a') as f:\n",
+                "                f.write('\\n' + patch_code)\n",
+                "            print(f'✅ Successfully patched: {io_file}')\n",
+                "            patch_applied = True\n",
+                "        else:\n",
+                "            print('ℹ️ Patch already present in io.py')\n",
+                "            patch_applied = True\n",
+                "if not patch_applied:\n",
+                "    print('⚠️ Could not locate io.py, continuing...')\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## ⚙️ Cell 4: Training Configuration for \"Hey Gagan\"\n",
+                "Defines the wake phrase (`hey gagan`, `hey gagan rajput`), sample size, and links background features."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import yaml\n",
+                "config = yaml.load(open('openwakeword/examples/custom_model.yml', 'r').read(), yaml.Loader)\n",
+                "config['target_phrase'] = ['hey gagan', 'hey gagan rajput']\n",
+                "config['model_name'] = 'hey_gagan'\n",
+                "config['n_samples'] = 1000\n",
+                "config['n_samples_val'] = 250\n",
+                "config['steps'] = 2500\n",
+                "config['target_accuracy'] = 0.70\n",
+                "config['target_recall'] = 0.35\n",
+                "config['background_paths'] = []\n",
+                "config['false_positive_validation_data_path'] = 'validation_set_features.npy'\n",
+                "config['feature_data_files'] = {'ACAV100M_sample': 'validation_set_features.npy'}\n",
+                "\n",
+                "with open('my_model.yaml', 'w') as file:\n",
+                "    yaml.dump(config, file)\n",
+                "print('✅ Saved my_model.yaml with target phrases: [\"hey gagan\", \"hey gagan rajput\"]')\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🎙️ Step 1: Generate Synthetic Clips (~3-5 mins)\n",
+                "Uses Piper TTS to generate diverse positive and negative training clips."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "!python openwakeword/openwakeword/train.py --training_config my_model.yaml --generate_clips\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🔊 Step 2: Augment Clips & Extract Features (~2-3 mins)\n",
+                "Applies room reverberation, pitch shifting, and extracts openWakeWord embeddings."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "!python openwakeword/openwakeword/train.py --training_config my_model.yaml --augment_clips\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🧠 Step 3: Train Neural Network & Export ONNX (~1 min)\n",
+                "Trains the classifier and exports `hey_gagan.onnx` using `onnxscript`."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "!python openwakeword/openwakeword/train.py --training_config my_model.yaml --train_model\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## ⬇️ Step 4: Download `hey_gagan.onnx` to Computer\n",
+                "Saves the trained model to your PC."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import glob, os\n",
+                "from google.colab import files\n",
+                "models = glob.glob('/content/**/hey_gagan.onnx', recursive=True)\n",
+                "if models:\n",
+                "    print(f'🎉 SUCCESS! Model found at: {models[0]} ({os.path.getsize(models[0])} bytes)')\n",
+                "    files.download(models[0])\n",
+                "    print('⬇️ Check your browser downloads for hey_gagan.onnx!')\n",
+                "else:\n",
+                "    print('⚠️ Model not found in /content, checking output folder:')\n",
+                "    !ls -la /content/my_custom_model/\n"
+            ]
+        }
+    ],
+    "metadata": {
+        "accelerator": "GPU",
+        "colab": {
+            "provenance": []
+        },
+        "kernelspec": {
+            "display_name": "Python 3",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 0
+}
+
+os.makedirs("notebooks", exist_ok=True)
+out_path = os.path.join("notebooks", "Train_Hey_Gagan_OpenWakeWord.ipynb")
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print(f"Generated notebook at {out_path} ({os.path.getsize(out_path)} bytes)")
