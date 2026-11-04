@@ -146,6 +146,8 @@ notebook = {
                 "config['target_accuracy'] = 0.70\n",
                 "config['target_recall'] = 0.35\n",
                 "config['background_paths'] = []\n",
+                "config['rir_paths'] = []\n",
+                "os.makedirs('./mit_rirs', exist_ok=True)\n",
                 "config['false_positive_validation_data_path'] = 'validation_set_features.npy'\n",
                 "config['feature_data_files'] = {'ACAV100M_sample': 'validation_set_features.npy'}\n",
                 "\n",
