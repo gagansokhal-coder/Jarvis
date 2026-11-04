@@ -35,6 +35,9 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
+                "# 0. System libraries for phonemization\n",
+                "!apt-get update -qq && apt-get install -y -qq libespeak-ng-dev espeak-ng\n",
+                "\n",
                 "# 1. Clone repos\n",
                 "!git clone -q https://github.com/dscripka/piper-sample-generator\n",
                 "!mkdir -p piper-sample-generator/models\n",
