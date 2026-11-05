@@ -67,39 +67,67 @@ def wake_display():
     except Exception as e:
         print(f"Error waking display: {e}")
 
-def unlock_laptop(pin: str = "1008") -> bool:
+def type_text(text: str):
     """
-    Simulates user action to dismiss the lock screen and enter the PIN/password.
+    Type arbitrary alphanumeric string on Windows logon screen.
+    Handles lowercase, uppercase, numbers, and special symbols with proper Shift states.
     """
-    print(f"🔓 [Unlock Request] Detected locked workstation. Unlocking with PIN...")
+    for char in str(text):
+        res = user32.VkKeyScanW(ord(char))
+        if res == -1:
+            continue
+        vk = res & 0xFF
+        shift = (res >> 8) & 1
+        if shift:
+            user32.keybd_event(0x10, 0, 0, 0) # Shift down
+            time.sleep(0.02)
+        user32.keybd_event(vk, 0, 0, 0)
+        time.sleep(0.03)
+        user32.keybd_event(vk, 0, 2, 0)
+        if shift:
+            time.sleep(0.02)
+            user32.keybd_event(0x10, 0, 2, 0) # Shift up
+        time.sleep(0.04)
+
+def unlock_laptop(passcode: str = None) -> bool:
+    """
+    Simulates user action to dismiss the lock screen and enter the password or PIN.
+    Reads WINDOWS_UNLOCK_PASSWORD or WINDOWS_PIN from environment if not explicitly passed.
+    """
+    active_code = passcode or os.environ.get("WINDOWS_UNLOCK_PASSWORD") or os.environ.get("WINDOWS_PIN") or "1008"
+    print(f"🔓 [Unlock Request] Detected locked workstation. Unlocking with credentials...")
 
     # 1. Wake display
     wake_display()
     time.sleep(0.2)
 
-    # 2. Press Space / Enter to dismiss wallpaper & expose password entry box
+    # 2. Press Escape then Space / Enter to dismiss lock curtain and expose password box
+    user32.keybd_event(0x1B, 0, 0, 0) # Escape
+    time.sleep(0.03)
+    user32.keybd_event(0x1B, 0, 2, 0)
+    time.sleep(0.2)
+
     user32.keybd_event(VK_SPACE, 0, 0, 0)
     time.sleep(0.04)
     user32.keybd_event(VK_SPACE, 0, 2, 0)
-    time.sleep(0.4)
+    time.sleep(0.35)
 
-    # 3. Type PIN digits
-    for digit in str(pin):
-        vk = VK_MAP.get(digit)
-        if vk:
-            user32.keybd_event(vk, 0, 0, 0)
-            time.sleep(0.04)
-            user32.keybd_event(vk, 0, 2, 0)
-            time.sleep(0.04)
+    user32.keybd_event(VK_RETURN, 0, 0, 0)
+    time.sleep(0.04)
+    user32.keybd_event(VK_RETURN, 0, 2, 0)
+    time.sleep(0.25)
 
-    # 4. Press Enter to submit PIN
+    # 3. Type password or PIN characters
+    type_text(active_code)
     time.sleep(0.15)
+
+    # 4. Press Enter to submit
     user32.keybd_event(VK_RETURN, 0, 0, 0)
     time.sleep(0.04)
     user32.keybd_event(VK_RETURN, 0, 2, 0)
 
     # Wait for desktop switch
-    time.sleep(0.8)
+    time.sleep(1.0)
 
     locked = is_workstation_locked()
     if not locked:

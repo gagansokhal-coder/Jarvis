@@ -44,7 +44,8 @@ def get_voice_for_text(text: str) -> str:
 async def _synthesize_async(text: str, output_path: str, voice: str = None) -> str:
     if not voice:
         voice = get_voice_for_text(text)
-    communicate = edge_tts.Communicate(text, voice)
+    # Boost Edge TTS volume by +50% and rate by +5% for punchy, clear speech
+    communicate = edge_tts.Communicate(text, voice, volume="+50%", rate="+5%")
     await communicate.save(output_path)
     return output_path
 
@@ -58,7 +59,7 @@ def synthesize_to_file(text: str, output_path: str = None, voice: str = None) ->
     return output_path
 
 def speak(text: str, blocking: bool = True, voice: str = None):
-    """Synthesize and play audio through default speakers/headphones."""
+    """Synthesize and play audio with amplified speaker gain."""
     if not text or not text.strip():
         return
     
@@ -69,7 +70,10 @@ def speak(text: str, blocking: bool = True, voice: str = None):
     try:
         temp_audio = synthesize_to_file(clean_text, voice=voice)
         data, fs = sf.read(temp_audio)
-        sd.play(data, fs)
+        import numpy as np
+        # 35% gain amplification with anti-clipping limiter for loud, crisp laptop speaker output
+        boosted = np.clip(data * 1.35, -1.0, 1.0)
+        sd.play(boosted, fs)
         if blocking:
             sd.wait()
         try:

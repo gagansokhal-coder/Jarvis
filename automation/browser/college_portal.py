@@ -119,3 +119,4 @@ if __name__ == "__main__":
     print(f"Total notices extracted: {len(res['notices'])}")
     for n in res["notices"]:
         print(f"  [{n['date']}] {n['title']}")
+

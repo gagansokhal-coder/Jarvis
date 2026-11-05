@@ -22,9 +22,32 @@ except Exception:
 from faster_whisper import WhisperModel
 
 DEFAULT_INITIAL_PROMPT = (
-    "Gagan, Gagan Rajput, Bhatti Rajput, Code with Baba, follower of Bholenath. "
+    "Gagan Rajput, Bhatti Rajput, Code with Baba, follower of Bholenath. "
+    "LeetCode, daily streak, problem, solution, submit, GitHub, repo, gagansokhal-coder, "
+    "GUI, text option, text chat option, text window, unlock laptop, lock laptop, password, PIN, "
+    "Microsoft Edge, Google Chrome, YouTube, VS Code, Visual Studio Code, NIT Jalandhar, NITJ. "
     "Hinglish, Hindi, English, Punjabi conversation."
 )
+
+PHONETIC_CORRECTIONS = [
+    (r'\b(litcode|lit code|leet code|leadcode|lead code)\b', 'leetcode'),
+    (r'\b(jiway|ji way|g ui|gee you eye|gui text|text option|text chat option|text window)\b', 'open gui'),
+    (r'\b(gagan sokhal coder|gagansokhal coder|gagan coder)\b', 'gagansokhal-coder'),
+    (r'\b(dialy streak|daily streak)\b', 'daily streak'),
+    (r'\b(alotp|labtop|loptop)\b', 'laptop'),
+    (r'\b(chorm|grom|crome|chrom)\b', 'chrome'),
+    (r'\b(micorosft edge|micro soft edge|close the edge|close edge|close microsoft edge)\b', 'close microsoft edge'),
+]
+
+def clean_phonetic_transcription(text: str) -> str:
+    """Normalize common Whisper misheard terms, accents, and typos."""
+    if not text:
+        return ""
+    import re
+    cleaned = text
+    for pattern, replacement in PHONETIC_CORRECTIONS:
+        cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
+    return cleaned
 
 _MODEL_INSTANCE = None
 
@@ -47,14 +70,16 @@ def transcribe_audio_file(audio_path: str, language: str = None, initial_prompt:
     prompt = initial_prompt or DEFAULT_INITIAL_PROMPT
     segments, info = model.transcribe(
         audio_path,
-        beam_size=1, # Blazing fast 1-beam greedy decode for low CPU latency
+        beam_size=2,
+        condition_on_previous_text=False,
         language=language,
         initial_prompt=prompt,
         vad_filter=True, # Filters out background silence
-        vad_parameters=dict(min_silence_duration_ms=250, threshold=0.4)
+        vad_parameters=dict(min_silence_duration_ms=200, threshold=0.35)
     )
 
-    full_text = " ".join([segment.text for segment in segments]).strip()
+    raw_text = " ".join([segment.text for segment in segments]).strip()
+    full_text = clean_phonetic_transcription(raw_text)
 
     return {
         "text": full_text,
@@ -64,14 +89,14 @@ def transcribe_audio_file(audio_path: str, language: str = None, initial_prompt:
     }
 
 def transcribe_audio_numpy(audio_array: np.ndarray, sample_rate: int = 16000, language: str = None) -> dict:
-    """Transcribe an in-memory numpy float32 audio buffer with volume boost normalization."""
+    """Transcribe an in-memory numpy float32 audio buffer with high-gain volume boost normalization."""
     if len(audio_array) == 0:
         return {"text": "", "language": "en", "language_probability": 0.0, "duration": 0.0}
 
-    # Volume normalization to boost quiet laptop microphones
+    # Volume normalization to boost quiet laptop microphones and faint speech
     max_val = np.max(np.abs(audio_array))
-    if max_val > 0.003:
-        audio_array = audio_array * (0.85 / max_val)
+    if max_val > 0.002:
+        audio_array = audio_array * (0.95 / max_val)
 
     fd, temp_wav = tempfile.mkstemp(suffix=".wav")
     os.close(fd)

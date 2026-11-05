@@ -106,3 +106,4 @@ if __name__ == "__main__":
     print("Testing Sandbox:")
     print("Safe dir:", execute_command("dir")["status"])
     print("Unsafe del:", execute_command("del important.txt")["status"])
+

@@ -19,16 +19,19 @@ sys.path.insert(0, BASE_DIR)
 
 from automation.laptop_controller import (
     open_interactive_app, open_url, open_folder, search_google,
-    focus_window, get_special_folder
+    focus_window, get_special_folder, launch_via_explorer_desktop
 )
 from automation.desktop.launcher import close_app, list_running_apps
 from automation.desktop.system import get_system_status_spoken, take_screenshot, lock_workstation
 from automation.desktop.sandbox import execute_command
 from automation.browser.agent import browse_url, summarize_web_page
 from automation.browser.college_portal import check_portal
+from automation.browser.leetcode_agent import open_daily_streak, get_daily_challenge
+from automation.browser.github_agent import handle_github_request
 from automation.email_controller import get_latest_emails
 from automation.learned_workflows import match_and_run_workflow
 from voice.chat_manager import ChatManager
+from voice.unlock_helper import unlock_laptop, is_workstation_locked
 
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
@@ -106,6 +109,18 @@ def execute_agent_action(action_str: str) -> tuple[bool, str]:
         return search_google(target)
     elif act_type == "lock":
         return lock_workstation()
+    elif act_type == "unlock":
+        ok = unlock_laptop()
+        return ok, "Laptop unlocked with your credentials, Gagan." if ok else "Attempted to unlock your laptop."
+    elif act_type == "leetcode":
+        return open_daily_streak()
+    elif act_type == "github":
+        return handle_github_request(target)
+    elif act_type == "gui":
+        pythonw = os.path.join(BASE_DIR, "venv", "Scripts", "pythonw.exe")
+        gui_script = os.path.join(BASE_DIR, "gui", "hacker_gui.py")
+        launch_via_explorer_desktop(pythonw, f'"{gui_script}"')
+        return True, "Tactical Hacker GUI opened on your screen, Gagan."
     return False, ""
 
 def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]:
@@ -191,13 +206,35 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         open_folder("documents")
         return _respond("Opening your Documents folder, Gagan.")
 
+    # Tactical Hacker GUI / Text Option
+    if any(k in clean for k in ["open text option", "open text chat option", "open gui", "open text window", "open hacker gui", "open tactical console", "open jiway"]):
+        pythonw = os.path.join(BASE_DIR, "venv", "Scripts", "pythonw.exe")
+        gui_script = os.path.join(BASE_DIR, "gui", "hacker_gui.py")
+        launch_via_explorer_desktop(pythonw, f'"{gui_script}"')
+        time.sleep(1.0)
+        focus_window("TACTICAL CYBER_CORE")
+        return _respond("Opening Tactical Cyber GUI on your screen, Gagan.")
+
+    # LeetCode & Daily Streak
+    if any(k in clean for k in ["leetcode", "litcode", "leadcode"]):
+        if any(w in clean for w in ["daily streak", "streak", "daily", "question", "submit", "problem"]):
+            ok, msg = open_daily_streak()
+            return _respond(msg)
+        open_url("https://leetcode.com")
+        return _respond("Opening LeetCode in Chrome for you, Gagan.")
+
+    # GitHub Navigation & Profile / Repo Routing
+    if any(k in clean for k in ["github", "git hub", "gagansokhal-coder", "gagansokhal coder"]):
+        ok, msg = handle_github_request(user_text)
+        return _respond(msg)
+
     # Process Management (List / Close apps)
     if any(k in clean for k in ["list apps", "running apps", "list running apps", "what apps are open"]):
         running = list_running_apps()
         top_apps = ", ".join(running[:6])
         return _respond(f"Currently running applications include: {top_apps}.")
 
-    close_match = re.search(r'\b(?:close|quit|kill|stop)\s+([a-zA-Z0-9\s]+)', clean)
+    close_match = re.search(r'\b(?:close|quit|kill|exit|shut down)\s+(?:the\s+|my\s+|app\s+)?([a-zA-Z0-9\s\-]+)', clean)
     if close_match and not any(k in clean for k in ["listening", "voice", "session", "loop"]):
         target_close = close_match.group(1).strip()
         success, msg = close_app(target_close)
@@ -210,6 +247,11 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
 
     if any(k in clean for k in ["system status", "cpu", "ram", "battery"]):
         return _respond(get_system_status_spoken())
+
+    # Workstation Lock & Unlock
+    if any(k in clean for k in ["unlock laptop", "unlock my laptop", "unlock pc", "unlock screen", "unlock computer", "open my laptop with password", "open laptop"]):
+        unlock_laptop()
+        return _respond("Unlocking your laptop screen with your credentials now, Gagan.")
 
     if any(k in clean for k in ["lock laptop", "lock pc", "lock screen", "lock computer"]):
         lock_workstation()
@@ -263,6 +305,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         "model": "phi4-mini:latest",
         "prompt": full_prompt,
         "stream": False,
+        "keep_alive": "24h",
         "options": {
             "temperature": 0.25,
             "num_predict": 75,
@@ -273,7 +316,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     }
 
     try:
-        resp = requests.post(OLLAMA_API, json=payload, timeout=25)
+        resp = requests.post(OLLAMA_API, json=payload, timeout=35)
         raw_output = resp.json().get("response", "").strip()
 
         # Stop hallucinated multi-turn user outputs
