@@ -113,3 +113,4 @@ if __name__ == "__main__":
     enable_background_listen_state()
     locked = is_workstation_locked()
     print(f"Current lock state: {'LOCKED' if locked else 'UNLOCKED'}")
+

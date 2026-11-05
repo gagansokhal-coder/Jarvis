@@ -23,17 +23,67 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
-# Set UTF-8 encoding & redirect to log if running detached/pythonw
+# Set UTF-8 encoding & dual logging to console + logs/voice_service.log
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(BASE_DIR)
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-if sys.stdout is None:
-    _log_f = open(os.path.join(LOGS_DIR, "voice_service.log"), "a", encoding="utf-8", buffering=1)
-    sys.stdout = _log_f
-    sys.stderr = _log_f
-elif hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
+class DualLogger:
+    def __init__(self, filename, stream):
+        self.stream = stream
+        self.log_file = open(filename, "a", encoding="utf-8", buffering=1)
+        self.encoding = "utf-8"
+        self.errors = "replace"
+
+    def fileno(self):
+        if self.stream and hasattr(self.stream, 'fileno'):
+            try:
+                return self.stream.fileno()
+            except Exception:
+                pass
+        return self.log_file.fileno()
+
+    def write(self, message):
+        if self.stream:
+            try:
+                self.stream.write(message)
+                self.stream.flush()
+            except Exception:
+                pass
+        try:
+            self.log_file.write(message)
+            self.log_file.flush()
+        except Exception:
+            pass
+
+    def flush(self):
+        if self.stream:
+            try: self.stream.flush()
+            except Exception: pass
+        try: self.log_file.flush()
+        except Exception: pass
+
+    def isatty(self):
+        if self.stream and hasattr(self.stream, 'isatty'):
+            try: return self.stream.isatty()
+            except Exception: pass
+        return False
+
+log_path = os.path.join(LOGS_DIR, "voice_service.log")
+sys.stdout = DualLogger(log_path, sys.stdout)
+sys.stderr = DualLogger(log_path, sys.stderr)
+
+import traceback
+
+def global_excepthook(exc_type, exc_value, exc_traceback):
+    traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+    try:
+        sys.stderr.flush()
+    except Exception:
+        pass
+
+sys.excepthook = global_excepthook
 WAKEWORD_DIR = os.path.join(BASE_DIR, 'voice', 'wakeword')
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
@@ -443,8 +493,10 @@ def ensure_singleton():
     global _sentinel_mutex
     if os.name == 'nt':
         ERROR_ALREADY_EXISTS = 183
-        _sentinel_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\GaganAI_VoiceSentinel_Mutex")
-        if ctypes.windll.kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        _sentinel_mutex = kernel32.CreateMutexW(None, False, "Local\\GaganAI_VoiceSentinel_Mutex")
+        err = ctypes.get_last_error()
+        if _sentinel_mutex and err == ERROR_ALREADY_EXISTS:
             print("[INFO] Another instance of Gagan AI Voice Sentinel is already running. Exiting.")
             sys.exit(0)
 

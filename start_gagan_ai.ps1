@@ -102,10 +102,10 @@ if (-not $existingWatcher) {
 $existingVoice = Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' or Name = 'python.exe'" | Where-Object { $_.CommandLine -like "*conversation_loop*" }
 if (-not $existingVoice) {
     Log-Message "[INFO] Starting 24/7 Voice Sentinel & Auto-Unlock Daemon..." "Cyan"
-    $pythonwPath = Join-Path $WorkspaceRoot "venv\Scripts\pythonw.exe"
+    $pythonPath = Join-Path $WorkspaceRoot "venv\Scripts\python.exe"
     $voiceScript = Join-Path $WorkspaceRoot "voice\conversation_loop.py"
-    if (Test-Path $pythonwPath) {
-        Start-Process -FilePath $pythonwPath -ArgumentList "`"$voiceScript`"" -WindowStyle Hidden
+    if (Test-Path $pythonPath) {
+        Start-Process -FilePath $pythonPath -ArgumentList "`"$voiceScript`"" -WindowStyle Hidden -WorkingDirectory $WorkspaceRoot
         Log-Message "[OK] Voice Sentinel started in background (listening for 'Hey Gagan')!" "Green"
     }
 }
