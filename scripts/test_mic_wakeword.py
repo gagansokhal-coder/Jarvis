@@ -73,3 +73,4 @@ with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, callback=audio_callback)
 
     except KeyboardInterrupt:
         print("\nTest stopped.")
+

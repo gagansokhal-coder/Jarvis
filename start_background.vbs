@@ -13,5 +13,11 @@ runSilent = currentDir & "\scripts\run_silent.vbs"
 cmdWatcher = "wscript.exe """ & runSilent & """ """ & pythonExe & """ """ & watcherScript & """"
 WshShell.Run cmdWatcher, 0, False
 
+' 3. Launch 24/7 Voice Sentinel & Auto-Unlock Daemon
+pythonwExe = currentDir & "\venv\Scripts\pythonw.exe"
+voiceScript = currentDir & "\voice\conversation_loop.py"
+cmdVoice = """" & pythonwExe & """ """ & voiceScript & """"
+WshShell.Run cmdVoice, 0, False
+
 Set WshShell = Nothing
 Set fso = Nothing

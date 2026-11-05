@@ -11,10 +11,12 @@ models/
 *.gguf
 *.bin
 *.onnx
+!voice/wakeword/hey_gagan.onnx
 
 # Runtime
 node_modules/
 openclaw/
+*.last-good
 __pycache__/
 *.pyc
 *.pyo

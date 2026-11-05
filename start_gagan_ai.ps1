@@ -98,6 +98,18 @@ if (-not $existingWatcher) {
     Log-Message "[OK] Real-time Email Watcher started in background!" "Green"
 }
 
-# 8. Launch Gateway with live output logging
+# 8. Start 24/7 Voice Sentinel & Auto-Unlock Daemon if not already running
+$existingVoice = Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' or Name = 'python.exe'" | Where-Object { $_.CommandLine -like "*conversation_loop*" }
+if (-not $existingVoice) {
+    Log-Message "[INFO] Starting 24/7 Voice Sentinel & Auto-Unlock Daemon..." "Cyan"
+    $pythonwPath = Join-Path $WorkspaceRoot "venv\Scripts\pythonw.exe"
+    $voiceScript = Join-Path $WorkspaceRoot "voice\conversation_loop.py"
+    if (Test-Path $pythonwPath) {
+        Start-Process -FilePath $pythonwPath -ArgumentList "`"$voiceScript`"" -WindowStyle Hidden
+        Log-Message "[OK] Voice Sentinel started in background (listening for 'Hey Gagan')!" "Green"
+    }
+}
+
+# 9. Launch Gateway with live output logging
 Log-Message "[INFO] Launching OpenClaw Gateway on Telegram..."
 & $nodeExe $openclawMjs gateway run *>> $logFile

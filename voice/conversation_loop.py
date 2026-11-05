@@ -23,11 +23,17 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
-# Set UTF-8 encoding
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-
+# Set UTF-8 encoding & redirect to log if running detached/pythonw
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+if sys.stdout is None:
+    _log_f = open(os.path.join(LOGS_DIR, "voice_service.log"), "a", encoding="utf-8", buffering=1)
+    sys.stdout = _log_f
+    sys.stderr = _log_f
+elif hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 WAKEWORD_DIR = os.path.join(BASE_DIR, 'voice', 'wakeword')
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
@@ -46,6 +52,18 @@ try:
     from scripts.telegram_sender import send_telegram_message
 except ImportError:
     from telegram_sender import send_telegram_message
+
+try:
+    from voice.chat_manager import ChatManager
+except ImportError:
+    from chat_manager import ChatManager
+
+try:
+    from voice.unlock_helper import enable_background_listen_state, is_workstation_locked, unlock_laptop
+except ImportError:
+    from unlock_helper import enable_background_listen_state, is_workstation_locked, unlock_laptop
+
+import ctypes
 
 try:
     import msvcrt
@@ -132,10 +150,25 @@ def build_system_prompt(user_query: str = "") -> str:
     )
     return prompt
 
-def query_ollama(prompt: str, context: list = None) -> tuple[str, list]:
-    """Query local Ollama for conversational AI response with real-time awareness."""
+def query_ollama(prompt: str, context: list = None, session_id: str = None) -> tuple[str, list]:
+    """Query local Ollama for conversational AI response with real-time awareness and persistent chat memory."""
+    if not session_id:
+        session_id = ChatManager.get_active_session()
+
+    # Save user message to persistent storage (like ChatGPT/Gemini)
+    ChatManager.add_message(session_id, "user", prompt, source="voice")
+
+    # Retrieve prior conversation memory for Ollama context continuity
+    recent_msgs = ChatManager.get_recent_history_context(session_id, limit=6)
+    history_str = ""
+    if len(recent_msgs) > 1:
+        lines = [f"{m['role'].upper()}: {m['content']}" for m in recent_msgs[:-1]]
+        history_str = "\nPrevious Conversation Context:\n" + "\n".join(lines)
+
     system_prompt = build_system_prompt(prompt)
-    
+    if history_str:
+        system_prompt += f"\n{history_str}"
+
     payload = {
         "model": "phi4-mini:latest",
         "prompt": prompt,
@@ -152,9 +185,15 @@ def query_ollama(prompt: str, context: list = None) -> tuple[str, list]:
     try:
         resp = requests.post(OLLAMA_API, json=payload, timeout=30)
         data = resp.json()
-        return data.get("response", "I could not generate a response."), data.get("context", [])
+        ai_reply = data.get("response", "I could not generate a response.")
+        new_context = data.get("context", [])
     except Exception as e:
-        return f"Error contacting AI brain: {e}", []
+        ai_reply = f"Error contacting AI brain: {e}"
+        new_context = []
+
+    # Save AI response to persistent storage
+    ChatManager.add_message(session_id, "assistant", ai_reply, source="voice")
+    return ai_reply, new_context
 
 def record_utterance(max_duration: float = 12.0, initial_timeout: float = 6.0) -> np.ndarray:
     """Record speech from microphone until silence is detected."""
@@ -292,10 +331,13 @@ def wait_for_wake_up(oww_model=None, threshold=0.40):
     chunk_size = 1280  # 80ms at 16kHz
 
     while True:
-        # Non-blocking keyboard check on Windows
-        if msvcrt and msvcrt.kbhit():
-            user_input = input("\n>> Keyboard prompt entered (or press ENTER): ").strip()
-            return True, user_input
+        # Non-blocking keyboard check on Windows (only in interactive console)
+        try:
+            if msvcrt and sys.stdin and hasattr(sys.stdin, 'isatty') and sys.stdin.isatty() and msvcrt.kbhit():
+                user_input = input("\n>> Keyboard prompt entered (or press ENTER): ").strip()
+                return True, user_input
+        except Exception:
+            pass
 
         if oww_model is not None:
             try:
@@ -324,18 +366,103 @@ def wait_for_wake_up(oww_model=None, threshold=0.40):
                             break
                     return True, ""
         else:
-            user_input = input(">> Press [ENTER] to talk: ").strip()
-            return True, user_input
+            try:
+                user_input = input(">> Press [ENTER] to talk: ").strip()
+                return True, user_input
+            except Exception:
+                time.sleep(1)
+
+def launch_hacker_gui():
+    """Signals or launches the Cyberpunk Hacker GUI."""
+    data_dir = os.path.join(BASE_DIR, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    signal_file = os.path.join(data_dir, "gui_trigger.signal")
+    try:
+        with open(signal_file, "w") as f:
+            f.write("show")
+    except Exception:
+        pass
+
+    try:
+        res = subprocess.run(
+            ['powershell', '-Command', 'Get-CimInstance Win32_Process -Filter "CommandLine like \'%hacker_gui%\'"'],
+            capture_output=True, text=True, timeout=3
+        )
+        if "hacker_gui" not in res.stdout:
+            # Prefer pythonw.exe in venv for silent windowless launch
+            venv_pythonw = os.path.join(BASE_DIR, "venv", "Scripts", "pythonw.exe")
+            python_exe = venv_pythonw if os.path.exists(venv_pythonw) else sys.executable
+            gui_script = os.path.join(BASE_DIR, "gui", "hacker_gui.py")
+            subprocess.Popen([python_exe, gui_script], creationflags=subprocess.DETACHED_PROCESS if os.name == 'nt' else 0)
+    except Exception as e:
+        print(f"Error launching Hacker GUI: {e}")
+
+def handle_system_intents(user_text: str) -> bool:
+    """Handle special voice triggers for Hacker GUI, screen locking, and memory optimization."""
+    clean = user_text.lower().strip()
+
+    # 1. Open Hacker GUI / Text Option
+    gui_triggers = [
+        "open text option", "open text", "open gui", "open chat", "open terminal",
+        "show text option", "show gui", "show chat", "open console", "tactical console",
+        "hacker screen", "hacker gui", "show console", "text option", "text chat",
+        "open text chat", "open the gui", "gui"
+    ]
+    if any(t in clean for t in gui_triggers):
+        print("💻 Launching / displaying Tactical Hacker GUI...")
+        launch_hacker_gui()
+        speak("Tactical console deployed, Gagan.", blocking=True)
+        return True
+
+    # 2. Lock screen
+    if any(t in clean for t in ["lock laptop", "lock screen", "lock computer", "lock pc"]):
+        print("🔒 Locking laptop upon voice command...")
+        speak("Locking workstation now.", blocking=True)
+        ctypes.windll.user32.LockWorkStation()
+        return True
+
+    # 3. Optimize / Delete memory
+    if any(t in clean for t in ["delete all chats", "clear all chats", "delete all history", "clear all history", "delete everything"]):
+        ChatManager.clear_all_sessions()
+        print("🗑️ All chat history permanently deleted.")
+        speak("All chat logs permanently cleared and database memory freed.", blocking=True)
+        return True
+
+    if any(t in clean for t in ["optimize memory", "delete chat", "clear chat", "clear memory", "prune memory"]):
+        pruned = ChatManager.optimize_memory(keep_recent=5)
+        print(f"⚡ Memory optimized: {pruned} records pruned.")
+        speak("Memory optimization complete. Stale records pruned.", blocking=True)
+        return True
+
+    return False
+
+_sentinel_mutex = None
+
+def ensure_singleton():
+    """Ensure only one instance of the background voice listener runs at any time."""
+    global _sentinel_mutex
+    if os.name == 'nt':
+        ERROR_ALREADY_EXISTS = 183
+        _sentinel_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\GaganAI_VoiceSentinel_Mutex")
+        if ctypes.windll.kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+            print("[INFO] Another instance of Gagan AI Voice Sentinel is already running. Exiting.")
+            sys.exit(0)
 
 def run_voice_loop():
+    ensure_singleton()
     print("=" * 60)
     print("       GAGAN AI ADVANCED VOICE & SECURITY SYSTEM")
     print("=" * 60)
     print("Multi-Wake Phrases: 'Hey Gagan', 'Hey Gagan Rajput', 'Gagan'")
     print(f"Security Challenge: {'ACTIVE (Who are you?)' if SECURITY_CHALLENGE_ACTIVE else 'DISABLED'}")
     print("Follow-up Window: 8.0 seconds")
+    print("Screen Unlock PIN: '1008' (Active)")
+    print("Tactical Hacker GUI: Supported ('Hey Gagan, open text option')")
     print("Languages: English, Hindi, Punjabi, 90+ languages")
     print("=" * 60)
+
+    # Enable background audio listening state during display sleep
+    enable_background_listen_state()
 
     # Load custom openWakeWord model
     model_path = os.path.join(WAKEWORD_DIR, 'hey_gagan.onnx')
@@ -355,6 +482,13 @@ def run_voice_loop():
         while True:
             try:
                 activated, direct_text = wait_for_wake_up(oww_model, threshold=0.40)
+
+                # Auto-Unlock laptop with PIN 1008 if workstation is locked
+                if is_workstation_locked():
+                    print("🔒 Workstation locked! Auto-unlocking with PIN 1008...")
+                    unlocked = unlock_laptop("1008")
+                    if unlocked:
+                        speak("Welcome back, Gagan. Workstation unlocked.", blocking=True)
 
                 # If activated:
                 if not direct_text:
@@ -379,6 +513,10 @@ def run_voice_loop():
                     user_text = direct_text
 
                 if not user_text:
+                    continue
+
+                # Check special system intents (Hacker GUI, lock screen, memory prune)
+                if handle_system_intents(user_text):
                     continue
 
                 # 2. Query AI Brain
@@ -424,6 +562,10 @@ def run_voice_loop():
                     if any(w in followup_text.lower() for w in ["thank you", "thanks", "bye", "goodbye", "stop", "that's all", "alvida", "dhanyavaad", "shut up", "bas"]):
                         print("👋 User ended conversation.")
                         speak("You're welcome, Gagan. I'm here whenever you need me.", blocking=True)
+                        break
+
+                    # Check special system intents in follow-up
+                    if handle_system_intents(followup_text):
                         break
 
                     # Continue conversation
