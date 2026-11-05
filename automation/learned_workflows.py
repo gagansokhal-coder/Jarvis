@@ -99,26 +99,17 @@ def execute_workflow_step(step: dict) -> tuple[bool, str]:
 
     try:
         if action == "open_url":
-            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-            if os.path.exists(chrome_path):
-                import subprocess
-                subprocess.Popen([chrome_path, "--new-window", target])
-            else:
-                webbrowser.open(target)
-            return True, f"Opened {target}"
+            from automation.laptop_controller import open_url
+            return open_url(target)
 
         elif action == "launch_app":
-            from automation.desktop.launcher import launch_app
-            return launch_app(target)
+            from automation.laptop_controller import open_interactive_app
+            return open_interactive_app(target)
 
         elif action == "focus_window":
-            try:
-                import win32com.client
-                shell = win32com.client.Dispatch("WScript.Shell")
-                shell.AppActivate(target)
-                return True, f"Focused {target}"
-            except Exception:
-                return True, f"Attempted focus on {target}"
+            from automation.laptop_controller import focus_window
+            success = focus_window(target)
+            return success, f"Focused {target}"
 
         elif action == "type_text":
             import pyautogui

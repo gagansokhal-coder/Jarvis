@@ -719,11 +719,6 @@ def run_voice_loop():
                     print(f"🤖 Gagan: \"{ai_reply}\"")
                     speak(ai_reply, blocking=True)
 
-                    # Continue conversation
-                    ai_reply, conversation_context = query_ollama(followup_text, conversation_context)
-                    print(f"🤖 Gagan: \"{ai_reply}\"")
-                    speak(ai_reply, blocking=True)
-
             except KeyboardInterrupt:
                 print("\nVoice loop stopped.")
                 break

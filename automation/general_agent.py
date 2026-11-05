@@ -1,7 +1,8 @@
 """
 General AI Autonomous Agent for Gagan Rajput's Laptop.
-Combines fast-path instant execution with autonomous LLM reasoning and real tool execution.
+Combines sub-10ms fast-paths with autonomous LLM reasoning and real Windows execution.
 Has full access to Windows PowerShell, applications, files, browsers, and Google services.
+Guarantees interactive GUI window visibility on Gagan's physical display.
 """
 import os
 import sys
@@ -14,7 +15,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 from automation.laptop_controller import (
-    open_interactive_app, open_url, search_google,
+    open_interactive_app, open_url, open_folder, search_google,
     execute_powershell, lock_screen, focus_window
 )
 from automation.email_controller import get_latest_emails
@@ -25,17 +26,26 @@ from voice.chat_manager import ChatManager
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
 SYSTEM_PROMPT = """You are Gagan AI, an elite, autonomous General AI assistant running directly on Gagan Rajput's Windows 11 laptop.
-You have FULL ACCESS to the entire computer. You are not a limited chatbot; you are a fully capable AI operator.
+You have FULL, UNRESTRICTED ACCESS to the entire computer. You are an autonomous AI operator.
 
-Your capabilities:
+Laptop Environment:
+- Owner: Gagan Rajput (Gagan)
+- OS: Windows 11 Pro
+- Active Desktop Folder: D:\\Desktop
+- Desktop Shortcuts: 'gagan - Chrome' (Personal Chrome Profile), 'Google Chrome', 'YouTube', 'Visual Studio Code', 'Antigravity IDE', 'gaganAI' folder
+- Real Email Accounts: gagandeep.cs.25@nitj.ac.in (NIT Jalandhar CSE College), gaganrajput1008@gmail.com (Personal), rajputdeveloper44@gmail.com (Developer)
+
+Your Autonomous Capabilities:
 1. Open and control ANY desktop app or website.
-2. Execute ANY Windows PowerShell command to inspect files, manage system, automate tasks.
-3. Access Gagan's Google services (NIT Jalandhar college email gagandeep.cs.25@nitj.ac.in, personal email, calendar).
-4. Automate workflows on Chrome, WhatsApp Web, ChatGPT, Antigravity IDE, etc.
+2. Open ANY folder on the laptop (Desktop is D:\\Desktop, Downloads, Documents, Pictures, etc.).
+3. Execute ANY Windows PowerShell command to inspect files, manage system, automate tasks.
+4. Fetch real-time emails across Gagan's accounts.
+5. Control YouTube, WhatsApp Web, ChatGPT, Antigravity IDE, etc.
 
 If the user gives a command requiring computer action, include an ACTION line:
 ACTION: open_app: <app_name>
 ACTION: open_url: <url>
+ACTION: open_folder: <folder_name_or_path>
 ACTION: powershell: <powershell_command>
 ACTION: email: <college|gagan rajput|developer|all>
 ACTION: search: <query>
@@ -57,6 +67,8 @@ def execute_agent_action(action_str: str) -> tuple[bool, str]:
         return open_interactive_app(target)
     elif act_type == "open_url":
         return open_url(target)
+    elif act_type == "open_folder":
+        return open_folder(target)
     elif act_type == "powershell":
         return execute_powershell(target)
     elif act_type == "email":
@@ -72,7 +84,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     """
     Main entry point for ANY user instruction:
     1. Checks Learned Workflows & Sleep controls.
-    2. Runs Fast-Path (<10ms) for common desktop & email queries.
+    2. Runs Fast-Path (<10ms) for common desktop, app, folder & email queries.
     3. Runs General AI Autonomous Reasoning for any arbitrary computer task.
     """
     clean = user_text.lower().strip()
@@ -100,11 +112,16 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     # =========================================================================
     # 1. FAST-PATH DIRECT INTENTS (Sub-10ms for instant feel)
     # =========================================================================
-    # Chrome opening (all phonetic variants: chrome, grom, crome, browser, etc.)
-    chrome_variants = ["open chrome", "open grom", "open crome", "open chrom", "open chorm", "open browser", "start chrome", "launch chrome"]
+    # Chrome opening (handles all phonetic variants: chrome, grom, crome, chrom, chorm, browser, etc.)
+    chrome_variants = ["open chrome", "open grom", "open crome", "open chrom", "open chorm", "open browser", "start chrome", "launch chrome", "open google chrome"]
     if any(k in clean for k in chrome_variants):
         open_interactive_app("chrome")
         return _respond("Opening Google Chrome on your screen, Gagan.")
+
+    # YouTube (App or Web)
+    if any(k in clean for k in ["open youtube", "go to youtube", "start youtube", "play youtube", "launch youtube"]):
+        open_interactive_app("youtube")
+        return _respond("Opening YouTube on your screen, Gagan.")
 
     # WhatsApp Web
     if any(k in clean for k in ["open whatsapp", "go to whatsapp", "send files to whatsapp", "whatsapp web", "send files through whatsapp"]):
@@ -114,17 +131,25 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     # ChatGPT
     if any(k in clean for k in ["open chatgpt", "go to chatgpt", "ask chatgpt", "open gpt"]):
         open_url("https://chatgpt.com")
-        return _respond("ChatGPT is open in Chrome.")
-
-    # YouTube
-    if any(k in clean for k in ["open youtube", "go to youtube"]):
-        open_url("https://www.youtube.com")
-        return _respond("Opening YouTube in Chrome.")
+        return _respond("Opening ChatGPT in Chrome, Gagan.")
 
     # Antigravity IDE
     if any(k in clean for k in ["open antigravity", "focus antigravity", "switch to antigravity"]):
         focus_window("Antigravity")
-        return _respond("Antigravity IDE focused and ready.")
+        return _respond("Antigravity IDE focused and ready, Gagan.")
+
+    # Visual Studio Code
+    if any(k in clean for k in ["open vs code", "open vscode", "open code", "open visual studio code"]):
+        open_interactive_app("vscode")
+        return _respond("Opening Visual Studio Code on your screen, Gagan.")
+
+    # Folders (Desktop, Downloads, etc.)
+    if any(k in clean for k in ["open desktop", "desktop folder", "on desktop, folder", "on desktop folder", "show desktop"]):
+        open_folder("desktop")
+        return _respond("Opening your Desktop folder on screen, Gagan.")
+    if any(k in clean for k in ["open downloads", "downloads folder", "show downloads"]):
+        open_folder("downloads")
+        return _respond("Opening your Downloads folder, Gagan.")
 
     # Emails
     if any(k in clean for k in ["email", "emails", "mail", "mails", "inbox"]):
@@ -143,7 +168,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     # Telemetry & Lock
     if any(k in clean for k in ["system status", "cpu", "ram", "battery"]):
         return _respond(get_system_status_spoken())
-    if any(k in clean for k in ["lock laptop", "lock pc", "lock screen"]):
+    if any(k in clean for k in ["lock laptop", "lock pc", "lock screen", "lock computer"]):
         lock_screen()
         return _respond("Workstation locked.")
 
@@ -154,7 +179,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         target_app = re.split(r'\b(?:now|please|for me|quickly)\b', target_app)[0].strip()
         success, msg = open_interactive_app(target_app)
         if success:
-            return _respond(f"Opening {target_app} on your screen.")
+            return _respond(f"Opening {target_app} on your screen, Gagan.")
 
     # =========================================================================
     # 2. GENERAL AI AUTONOMOUS AGENT REASONING (For ANY Arbitrary Directive)
@@ -200,12 +225,12 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
             reply_text = re.sub(r'ACTION:\s*[^\n]+', '', raw_output).strip()
 
         if not reply_text:
-            reply_text = "Directive executed, Gagan."
+            reply_text = "Directive executed on your laptop, Gagan."
 
         # Filter out canned refusal hallucinations
         for refusal in ["can't assist", "cannot assist", "unable to assist"]:
             if refusal in reply_text.lower():
-                reply_text = "I'm on it, Gagan. What would you like to do next?"
+                reply_text = "I'm on it, Gagan. What would you like me to do next?"
 
         return _respond(reply_text)
 
