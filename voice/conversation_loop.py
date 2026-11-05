@@ -495,67 +495,18 @@ def launch_hacker_gui():
         print(f"Error launching Hacker GUI: {e}")
 
 def handle_system_intents(user_text: str) -> bool:
-    """Handle special voice triggers for Hacker GUI, screen locking, and memory optimization."""
-    clean = user_text.lower().strip()
-
-    # 1. Open Hacker GUI / Text Option
-    gui_triggers = [
-        "open text option", "open text", "open gui", "open chat", "open terminal",
-        "show text option", "show gui", "show chat", "open console", "tactical console",
-        "hacker screen", "hacker gui", "show console", "text option", "text chat",
-        "open text chat", "open the gui", "gui"
-    ]
-    if any(t in clean for t in gui_triggers):
-        print("💻 Launching / displaying Tactical Hacker GUI...")
-        launch_hacker_gui()
-        speak("Tactical console deployed, Gagan.", blocking=True)
-        return True
-
-    # 2. Lock screen
-    if any(t in clean for t in ["lock laptop", "lock screen", "lock computer", "lock pc"]):
-        print("🔒 Locking laptop upon voice command...")
-        speak("Locking workstation now.", blocking=True)
-        ctypes.windll.user32.LockWorkStation()
-        return True
-
-    # 3. Optimize / Delete memory
-    if any(t in clean for t in ["delete all chats", "clear all chats", "delete all history", "clear all history", "delete everything"]):
-        ChatManager.clear_all_sessions()
-        print("🗑️ All chat history permanently deleted.")
-        speak("All chat logs permanently cleared and database memory freed.", blocking=True)
-        return True
-
-    if any(t in clean for t in ["optimize memory", "delete chat", "clear chat", "clear memory", "prune memory"]):
-        pruned = ChatManager.optimize_memory(keep_recent=5)
-        print(f"⚡ Memory optimized: {pruned} records pruned.")
-        speak("Memory optimization complete. Stale records pruned.", blocking=True)
-        return True
-
-    # 4. Read Latest Email from Storage
-    email_triggers = [
-        "read latest email", "read complete email", "give me complete mail",
-        "read the mail", "read mail", "check latest email", "what is the latest email",
-        "any new email", "show latest email", "check my email", "tell me the mail"
-    ]
-    if any(t in clean for t in email_triggers):
-        latest_file = os.path.join(BASE_DIR, "data", "latest_email.txt")
-        if os.path.exists(latest_file):
-            try:
-                with open(latest_file, "r", encoding="utf-8") as f:
-                    content = f.read().strip()
-                print(f"📧 Reading latest email from storage:\n{content}")
-                lines = content.split("\n\n")
-                header_part = lines[0] if lines else "Latest email found."
-                body_part = lines[1] if len(lines) > 1 else ""
-                speak(f"Here is your latest email: {header_part}. {body_part[:250]}", blocking=True)
-                return True
-            except Exception as e:
-                print(f"Error reading latest email: {e}")
-        else:
-            speak("No new emails found in storage.", blocking=True)
-            return True
-
-    return False
+    """
+    Delegate to Phase 4 Action Dispatcher:
+    Instantly routes app launching/closing, account-specific email fetching,
+    system telemetry, screenshots, and screen locking in <10ms.
+    """
+    try:
+        from automation.action_dispatcher import dispatch_action
+        handled, _ = dispatch_action(user_text, speak_fn=speak)
+        return handled
+    except Exception as e:
+        print(f"⚠️ Action dispatcher error: {e}")
+        return False
 
 def detect_best_mic():
     """
@@ -678,17 +629,15 @@ def run_voice_loop():
                 if not user_text:
                     continue
 
-                # Check special system intents (Hacker GUI, lock screen, memory prune)
-                if handle_system_intents(user_text):
-                    continue
-
-                # 2. Query AI Brain
-                print("🧠 Gagan AI is thinking...")
-                ai_reply, conversation_context = query_ollama(user_text, conversation_context)
-                print(f"🤖 Gagan: \"{ai_reply}\"")
-
-                # 3. Speak response out loud
-                speak(ai_reply, blocking=True)
+                # Check Phase 4 fast-path action intents (Apps, Email, Telemetry, Desktop)
+                action_handled = handle_system_intents(user_text)
+                if not action_handled:
+                    # 2. Query AI Brain
+                    print("🧠 Gagan AI is thinking...")
+                    ai_reply, conversation_context = query_ollama(user_text, conversation_context)
+                    print(f"🤖 Gagan: \"{ai_reply}\"")
+                    # 3. Speak response out loud
+                    speak(ai_reply, blocking=True)
 
                 # 4. Continuous Follow-up Loop (8-second window)
                 while True:
@@ -729,7 +678,9 @@ def run_voice_loop():
 
                     # Check special system intents in follow-up
                     if handle_system_intents(followup_text):
-                        break
+                        if any(w in followup_text.lower() for w in ["lock laptop", "lock screen", "lock computer", "lock pc"]):
+                            break
+                        continue
 
                     # Continue conversation
                     ai_reply, conversation_context = query_ollama(followup_text, conversation_context)

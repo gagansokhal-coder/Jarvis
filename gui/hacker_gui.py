@@ -344,6 +344,19 @@ class HackerConsole(ctk.CTk):
             self._execute_terminal_command(cmd)
             return
 
+        # 3.5 Check Phase 4 Fast Action Dispatcher (<10ms execution for apps, email, desktop actions)
+        try:
+            from automation.action_dispatcher import dispatch_action
+            handled, action_reply = dispatch_action(raw_text)
+            if handled:
+                ChatManager.add_message(self.active_session_id, "assistant", action_reply, source="action")
+                self._render_message_bubble("assistant", action_reply, "action", now_str)
+                self._scroll_to_bottom()
+                self.lbl_status.configure(text=" ● ACTION EXECUTED // FAST-PATH ACTIVE", text_color=COLOR_ACCENT_GREEN)
+                return
+        except Exception as e:
+            print(f"Action dispatcher error: {e}")
+
         # 4. Query Ollama AI Brain in background thread so UI doesn't freeze
         threading.Thread(target=self._process_ai_query, args=(raw_text,), daemon=True).start()
 

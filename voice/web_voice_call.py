@@ -534,15 +534,16 @@ async def handle_voice_turn(request):
         if not user_text:
             return web.json_response({"user_text": "", "ai_reply": "", "audio_base64": ""})
 
-        # Check system intents (e.g. read email)
-        if any(t in user_text.lower() for t in ["read latest email", "read complete email", "give me complete mail", "read mail"]):
-            latest_path = os.path.join(BASE_DIR, 'data', 'latest_email.txt')
-            if os.path.exists(latest_path):
-                with open(latest_path, 'r', encoding='utf-8') as f:
-                    ai_reply = f.read().strip()
+        # Check Phase 4 Fast-path Action Dispatcher (Apps, Email, System, Search)
+        try:
+            from automation.action_dispatcher import dispatch_action
+            handled, action_reply = dispatch_action(user_text)
+            if handled:
+                ai_reply = action_reply
             else:
-                ai_reply = "No emails found in storage."
-        else:
+                ai_reply, _ = query_ollama(user_text)
+        except Exception as e:
+            print(f"Action dispatcher error: {e}")
             ai_reply, _ = query_ollama(user_text)
 
         # 2. Synthesize with Edge-TTS
@@ -569,14 +570,15 @@ async def handle_text_query(request):
     if not query:
         return web.json_response({"error": "Empty query"}, status=400)
 
-    if any(t in query.lower() for t in ["read latest email", "read complete email", "give me complete mail", "read mail"]):
-        latest_path = os.path.join(BASE_DIR, 'data', 'latest_email.txt')
-        if os.path.exists(latest_path):
-            with open(latest_path, 'r', encoding='utf-8') as f:
-                ai_reply = f.read().strip()
+    try:
+        from automation.action_dispatcher import dispatch_action
+        handled, action_reply = dispatch_action(query)
+        if handled:
+            ai_reply = action_reply
         else:
-            ai_reply = "No emails found in storage."
-    else:
+            ai_reply, _ = query_ollama(query)
+    except Exception as e:
+        print(f"Action dispatcher error: {e}")
         ai_reply, _ = query_ollama(query)
 
     audio_mp3 = synthesize_to_file(ai_reply)
