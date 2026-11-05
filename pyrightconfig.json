@@ -1,0 +1,17 @@
+{
+  "include": [
+    ".",
+    "voice",
+    "scripts",
+    "gui"
+  ],
+  "extraPaths": [
+    ".",
+    "voice",
+    "scripts",
+    "gui"
+  ],
+  "venvPath": ".",
+  "venv": "venv"
+}
+

@@ -91,27 +91,38 @@ sys.path.insert(0, BASE_DIR)
 sys.path.insert(0, os.path.join(BASE_DIR, 'voice'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'scripts'))
 
+import importlib
+
 try:
     from voice.tts_engine import speak, detect_language
     from voice.stt_engine import transcribe_audio_numpy
 except ImportError:
-    from tts_engine import speak, detect_language
-    from stt_engine import transcribe_audio_numpy
+    _tts = importlib.import_module("tts_engine")
+    speak, detect_language = _tts.speak, _tts.detect_language
+    _stt = importlib.import_module("stt_engine")
+    transcribe_audio_numpy = _stt.transcribe_audio_numpy
 
 try:
     from scripts.telegram_sender import send_telegram_message
 except ImportError:
-    from telegram_sender import send_telegram_message
+    try:
+        send_telegram_message = importlib.import_module("telegram_sender").send_telegram_message
+    except Exception:
+        def send_telegram_message(msg: str):
+            print(f"[Telegram Alert Placeholder] {msg}")
 
 try:
     from voice.chat_manager import ChatManager
 except ImportError:
-    from chat_manager import ChatManager
+    ChatManager = importlib.import_module("chat_manager").ChatManager
 
 try:
     from voice.unlock_helper import enable_background_listen_state, is_workstation_locked, unlock_laptop
 except ImportError:
-    from unlock_helper import enable_background_listen_state, is_workstation_locked, unlock_laptop
+    _uh = importlib.import_module("unlock_helper")
+    enable_background_listen_state = _uh.enable_background_listen_state
+    is_workstation_locked = _uh.is_workstation_locked
+    unlock_laptop = _uh.unlock_laptop
 
 import ctypes
 
