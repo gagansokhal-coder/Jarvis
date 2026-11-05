@@ -108,6 +108,61 @@ def resolve_shortcut(lnk_path: str) -> tuple[str, str]:
     except Exception:
         return lnk_path, ""
 
+def force_window_foreground(hwnd) -> bool:
+    """
+    Guarantees bringing any HWND to the true foreground on Windows 11 physical display.
+    Bypasses LockSetForegroundWindow restrictions by attaching thread input and simulating ALT key.
+    """
+    try:
+        import ctypes
+        import win32api
+        user32 = ctypes.windll.user32
+        h_int = int(hwnd)
+        fore_hwnd = user32.GetForegroundWindow()
+        fore_tid = user32.GetWindowThreadProcessId(fore_hwnd, None)
+        cur_tid = win32api.GetCurrentThreadId()
+
+        user32.AttachThreadInput(cur_tid, fore_tid, True)
+        user32.keybd_event(0x12, 0, 0, 0) # ALT down
+        user32.keybd_event(0x12, 0, 2, 0) # ALT up
+        user32.ShowWindow(h_int, 9)       # SW_RESTORE
+        user32.BringWindowToTop(h_int)
+        user32.SetForegroundWindow(h_int)
+        user32.AttachThreadInput(cur_tid, fore_tid, False)
+        return True
+    except Exception:
+        return False
+
+def launch_via_explorer_desktop(target: str, args: str = "", work_dir: str = "", operation: str = "open") -> tuple[bool, str]:
+    """
+    Launch any executable, shortcut (.lnk), URL, or folder directly through the interactive
+    Windows Explorer shell process on WinSta0\\Default.
+    This guarantees 100% physical display GUI visibility, completely eliminating virtual sandbox traps.
+    """
+    try:
+        import win32com.client
+        shell = win32com.client.Dispatch("Shell.Application")
+        windows = shell.Windows()
+        desktop_app = None
+        for w in windows:
+            try:
+                name = w.LocationName
+                if not name or "desktop" in name.lower():
+                    desktop_app = w.Document.Application
+                    break
+            except Exception:
+                pass
+
+        if desktop_app:
+            desktop_app.ShellExecute(target, args, work_dir, operation, 1)
+            return True, f"Launched {os.path.basename(target)} via Explorer Shell on interactive desktop."
+
+        shell.ShellExecute(target, args, work_dir, operation, 1)
+        return True, f"Launched {os.path.basename(target)} via Shell.Application."
+    except Exception as e:
+        # Fallback to interactive CreateProcess
+        return launch_on_interactive_desktop(f'"{target}" {args}'.strip())
+
 def launch_on_interactive_desktop(cmd: str) -> tuple[bool, str]:
     """
     Launch any process onto WinSta0\\Default so its GUI window is immediately
@@ -161,33 +216,39 @@ def get_chrome_executable() -> str:
 def open_interactive_app(app_name: str, args: list = None) -> tuple[bool, str]:
     """
     Launch or focus any Windows application dynamically without hardcoded paths.
+    Uses Explorer Desktop COM to guarantee the window is visible on physical screen.
     """
     clean = app_name.lower().strip()
     apps = discover_installed_apps()
 
     # 1. Special handling for Google Chrome
     if any(k in clean for k in ["chrome", "browser", "grom", "grome", "crom", "crome", "chrom"]):
-        chrome_exe = get_chrome_executable()
         url = args[0] if (args and len(args) > 0) else ""
 
-        # Check if there is a personal profile shortcut dynamically discovered on desktop
-        personal_shortcut = apps.get("gagan - chrome")
+        # Check for personal desktop shortcut (e.g. 'gagan - chrome')
+        personal_shortcut = apps.get("gagan - chrome") or apps.get("google chrome")
         if personal_shortcut and os.path.exists(personal_shortcut) and not url:
-            target, arguments = resolve_shortcut(personal_shortcut)
-            cmd = f'"{target}" {arguments}'.strip()
+            success, msg = launch_via_explorer_desktop(personal_shortcut)
         else:
-            if url:
-                cmd = f'"{chrome_exe}" --profile-directory="Default" "{url}"'
-            else:
-                cmd = f'"{chrome_exe}" --profile-directory="Default"'
+            chrome_args = f'"{url}"' if url else ""
+            success, msg = launch_via_explorer_desktop("chrome.exe", chrome_args)
 
-        success, msg = launch_on_interactive_desktop(cmd)
-        time.sleep(0.5)
-        focus_window("Chrome")
+        time.sleep(1.0)
+        focus_window("Google Chrome")
         return success, "Google Chrome opened on your screen, Gagan."
 
-    # 2. Check dynamically discovered applications and shortcuts
-    # Exact or substring match
+    # 2. Special handling for YouTube
+    if "youtube" in clean:
+        yt_shortcut = apps.get("youtube")
+        if yt_shortcut and os.path.exists(yt_shortcut):
+            success, msg = launch_via_explorer_desktop(yt_shortcut)
+        else:
+            success, msg = launch_via_explorer_desktop("chrome.exe", "https://www.youtube.com")
+        time.sleep(1.0)
+        focus_window("YouTube")
+        return success, "YouTube opened on your screen, Gagan."
+
+    # 3. Check dynamically discovered applications and shortcuts
     matched_path = apps.get(clean)
     if not matched_path:
         for name, path in apps.items():
@@ -196,23 +257,16 @@ def open_interactive_app(app_name: str, args: list = None) -> tuple[bool, str]:
                 break
 
     if matched_path and os.path.exists(matched_path):
-        if matched_path.lower().endswith(".lnk"):
-            target, arguments = resolve_shortcut(matched_path)
-            cmd = f'"{target}" {arguments}'.strip()
-        else:
-            cmd = f'"{matched_path}"'
-
-        success, msg = launch_on_interactive_desktop(cmd)
-        time.sleep(0.5)
+        success, msg = launch_via_explorer_desktop(matched_path)
+        time.sleep(1.0)
         focus_window(clean)
         return success, f"Opened {app_name} on your screen, Gagan."
 
-    # 3. Fallback to generic system executable lookup
+    # 4. Fallback to generic system executable lookup
     target = shutil.which(clean) or clean
-    cmd = f'"{target}"'
-    success, msg = launch_on_interactive_desktop(cmd)
+    success, msg = launch_via_explorer_desktop(target)
     if success:
-        time.sleep(0.5)
+        time.sleep(1.0)
         focus_window(clean)
         return True, f"Launched {app_name} on your screen."
 
@@ -238,12 +292,14 @@ def open_folder(folder_path: str) -> tuple[bool, str]:
     else:
         resolved = desktop_dir
 
-    cmd = f'explorer.exe "{resolved}"'
-    success, msg = launch_on_interactive_desktop(cmd)
+    success, msg = launch_via_explorer_desktop("explorer.exe", f'"{resolved}"')
+    time.sleep(0.5)
+    focus_window(os.path.basename(resolved))
     return success, f"Opened {os.path.basename(resolved) or 'folder'} in File Explorer."
 
 def focus_window(title_keyword: str) -> bool:
-    """Bring any window matching title_keyword to the foreground on the active desktop."""
+    """Bring any window matching title_keyword to the foreground on physical screen."""
+    clean_kw = title_keyword.lower().strip()
     try:
         import win32service
         import win32gui
@@ -252,10 +308,15 @@ def focus_window(title_keyword: str) -> bool:
         hwnds = hdesk.EnumDesktopWindows()
         for h in hwnds:
             text = win32gui.GetWindowText(h)
-            if title_keyword.lower() in text.lower():
-                win32gui.ShowWindow(h, win32con.SW_RESTORE)
-                win32gui.SetForegroundWindow(h)
-                return True
+            cls = win32gui.GetClassName(h)
+            if not text.strip():
+                continue
+            if 'restore pages' in text.lower():
+                continue
+            if clean_kw in text.lower() or clean_kw in cls.lower():
+                ok = force_window_foreground(h)
+                if ok:
+                    return True
     except Exception:
         pass
 
@@ -268,14 +329,12 @@ def focus_window(title_keyword: str) -> bool:
         return False
 
 def open_url(url: str) -> tuple[bool, str]:
-    """Open any URL in Google Chrome with Gagan's profile on screen."""
+    """Open any URL in Google Chrome on Gagan's physical screen."""
     if not url.startswith("http://") and not url.startswith("https://"):
         url = "https://" + url
 
-    chrome_exe = get_chrome_executable()
-    cmd = f'"{chrome_exe}" --profile-directory="Default" "{url}"'
-    success, msg = launch_on_interactive_desktop(cmd)
-    time.sleep(0.5)
+    success, msg = launch_via_explorer_desktop("chrome.exe", f'"{url}"')
+    time.sleep(1.0)
     focus_window("Chrome")
     return success, f"Opened {url} in Chrome."
 

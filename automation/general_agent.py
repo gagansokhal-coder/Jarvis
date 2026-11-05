@@ -119,6 +119,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     session_id = ChatManager.get_active_session()
 
     def _respond(msg: str):
+        print(f"🤖 Gagan: \"{msg}\"")
         ChatManager.add_message(session_id, "user", user_text, source="voice")
         ChatManager.add_message(session_id, "assistant", msg, source="voice")
         if speak_fn and msg != "STOP_LISTENING_SIGNAL":
@@ -327,7 +328,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
                 reply_text = "I'm on it, Gagan. How would you like me to handle this?"
 
         # Strip robotic lines if they accidentally slip through
-        reply_text = re.sub(r'\b(Directive executed|Task completed|Action detected)\b', '', reply_text, flags=re.IGNORECASE).strip()
+        reply_text = re.sub(r'\b(Directive executed|Directive executive|Directive executed on your laptop|Task completed|Action detected)\b', '', reply_text, flags=re.IGNORECASE).strip()
         if not reply_text:
             reply_text = "I've taken care of that for you, Gagan."
 
