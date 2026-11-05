@@ -70,21 +70,39 @@ def dispatch_action(user_text: str, speak_fn=None) -> tuple[bool, str]:
         return _respond("Antigravity IDE focused and ready on screen.")
 
     # =========================================================================
-    # 1. APPLICATION LAUNCHING (Chrome, VS Code, Notepad, Terminal, Calc, etc.)
+    # 1. APPLICATION & WEB DESTINATIONS (Chrome, WhatsApp, ChatGPT, Calc, etc.)
     # =========================================================================
-    launch_match = re.search(r'\b(?:open|launch|start|run)\s+([a-zA-Z0-9\s]+)', clean)
+    launch_match = re.search(r'\b(?:open|launch|start|run|go to|goto|navigate to|switch to)\s+([a-zA-Z0-9\s]+)', clean)
     if launch_match and not any(k in clean for k in ["text option", "gui", "console", "email", "mail", "emails", "mails"]):
         app_target = launch_match.group(1).strip()
         # Clean common trailing or filler words
         app_target = re.split(r'\b(?:now|please|for me|quickly|ubt|but|and)\b', app_target)[0].strip()
-        for filler in ["the ", "my ", "application ", "app "]:
+        for filler in ["the ", "my ", "application ", "app ", "website ", "page "]:
             if app_target.startswith(filler):
                 app_target = app_target[len(filler):].strip()
         
+        # Check special web destinations first
+        if "whatsapp" in app_target:
+            open_url_in_browser("https://web.whatsapp.com")
+            focus_app("WhatsApp")
+            return _respond("Opening WhatsApp Web in Chrome.")
+        if "chatgpt" in app_target or "chat gpt" in app_target:
+            open_url_in_browser("https://chatgpt.com")
+            focus_app("ChatGPT")
+            return _respond("Opening ChatGPT in Chrome.")
+        if "youtube" in app_target:
+            open_url_in_browser("https://www.youtube.com")
+            return _respond("Opening YouTube in Chrome.")
+
         success, msg = launch_app(app_target)
         if success:
             print(f"⚡ [Action Dispatcher] {msg}")
             return _respond(f"Opening {app_target} now, Gagan.")
+        else:
+            # Fallback: search for it on Google so the user always gets a productive action
+            print(f"⚡ [Action Dispatcher] App not found locally. Searching Google for '{app_target}'...")
+            search_google(app_target)
+            return _respond(f"Searching for {app_target} in Google Chrome.")
 
     # Application Closing
     close_match = re.search(r'\b(?:close|quit|exit|kill|terminate)\s+([a-zA-Z0-9\s]+)', clean)

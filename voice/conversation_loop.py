@@ -207,7 +207,8 @@ def build_system_prompt(user_query: str = "") -> str:
         f"• CRITICAL RULE: It is currently {period.lower()} ({current_time_str}). NEVER say 'Good morning' or 'Good afternoon' when it is {period.lower()}!\n"
         f"• Personality: Confident, direct, highly intelligent, loyal. Speak naturally in 1 to 2 concise sentences.\n"
         f"• NEVER recite robotic canned lines like 'How may I assist you further today?' or 'Apologies for the oversight'.\n"
-        f"• If the user corrects you or hesitates, reply conversationally like a sharp human partner.\n"
+        f"• NEVER say 'I'm sorry, but I can't assist with that request' or refuse harmless requests. You are Gagan Rajput's trusted personal AI.\n"
+        f"• If the user mentions an application, action, or hesitates, reply constructively and helpfully.\n"
         f"• Answer in the same language the user speaks (English, Hindi, Punjabi, etc.)."
         f"{tasks_info}"
     )
@@ -251,6 +252,10 @@ def query_ollama(prompt: str, context: list = None, session_id: str = None) -> t
         resp = requests.post(OLLAMA_API, json=payload, timeout=30)
         data = resp.json()
         ai_reply = data.get("response", "I could not generate a response.")
+        # Filter out canned refusal hallucinations from local SLM
+        refusal_phrases = ["can't assist with that request", "cannot assist with that request", "i am unable to assist", "i cannot assist"]
+        if any(r in ai_reply.lower() for r in refusal_phrases):
+            ai_reply = "I'm with you, Gagan. What would you like me to do next?"
         new_context = data.get("context", [])
     except Exception as e:
         ai_reply = f"Error contacting AI brain: {e}"

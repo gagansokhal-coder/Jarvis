@@ -12,12 +12,40 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 # App registry with auto-resolved paths
 APPS = {
+    # Google Chrome and Whisper phonetic variations (Indian / accented speech)
     "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     "google chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    "chrme": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "grom": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "grome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "crom": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     "crome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "chrom": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "chome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "chorm": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "chrme": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     "crhome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "corom": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "krome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "krom": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     "browser": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "google browser": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "web": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "internet": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+
+    # Web Portals & Quick Destinations
+    "whatsapp": "https://web.whatsapp.com",
+    "whatsapp web": "https://web.whatsapp.com",
+    "web whatsapp": "https://web.whatsapp.com",
+    "chatgpt": "https://chatgpt.com",
+    "chat gpt": "https://chatgpt.com",
+    "gpt": "https://chatgpt.com",
+    "youtube": "https://www.youtube.com",
+    "gmail": "https://mail.google.com",
+    "github": "https://github.com",
+    "nitj": "https://www.nitj.ac.in",
+    "nit jalandhar": "https://www.nitj.ac.in",
+
+    # Desktop Applications
     "vscode": os.path.expandvars(r"%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"),
     "code": os.path.expandvars(r"%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"),
     "vs code": os.path.expandvars(r"%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"),
@@ -52,7 +80,8 @@ def focus_app(window_title: str) -> bool:
 def _spawn_interactive(target: str, args: list = None, app_name: str = "") -> tuple[bool, str]:
     """Reliably launch a Windows application and guarantee it appears on screen."""
     # Special handling for Chrome & browsers: force a visible interactive window
-    if any(k in app_name.lower() or k in target.lower() for k in ["chrome", "browser", "chrme", "crome"]):
+    chrome_variants = ["chrome", "browser", "chrme", "crome", "crhome", "grom", "grome", "crom", "chrom", "chorm", "corom", "krome"]
+    if any(k in app_name.lower() or k in target.lower() for k in chrome_variants):
         try:
             # 1. If Chrome window is already open, focus it
             if focus_app("Chrome") or focus_app("Google Chrome"):
@@ -68,8 +97,13 @@ def _spawn_interactive(target: str, args: list = None, app_name: str = "") -> tu
             except Exception as e:
                 return False, f"Failed to start Chrome: {e}"
 
+    # For web portals & URLs
+    if target.startswith("http:") or target.startswith("https:"):
+        open_url_in_browser(target)
+        return True, f"Opened {app_name} in Chrome."
+
     # For settings / protocols
-    if target.startswith("ms-settings:") or target.startswith("http:") or target.startswith("https:"):
+    if target.startswith("ms-settings:"):
         os.startfile(target)
         return True, f"Opened {app_name}."
 
