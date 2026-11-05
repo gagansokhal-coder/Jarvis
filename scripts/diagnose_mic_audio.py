@@ -35,3 +35,4 @@ for idx, d in enumerate(devs):
 candidates.sort(key=lambda x: x[3], reverse=True)
 if candidates:
     print("\nTop working mic device:", candidates[0])
+

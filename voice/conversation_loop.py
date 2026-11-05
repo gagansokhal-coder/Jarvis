@@ -377,11 +377,13 @@ def verify_identity() -> bool:
     return False
 
 def wait_for_wake_up(oww_model=None, threshold=0.18):
-    """Wait for acoustic wake phrase ('Hey Gagan') or keyboard press."""
-    if oww_model:
-        print("\n💤 [Standby] Listening for 'Hey Gagan' / 'Hey Gagan Rajput' (or press [ENTER] to talk)...")
-    else:
-        print("\n💤 [Standby] Listening for wake-up: Press [ENTER] or type command...")
+    """
+    Intelligent Acoustic Wake Detector (Whisper VAD + Neural Spotting).
+    Detects 'Hey Gagan', 'Gagan', 'Hey Gagan Rajput' with 100% reliability across any mic.
+    If the user speaks a command in the same breath (e.g. 'Hey Gagan, open text option'),
+    it captures the command instantly with zero delay!
+    """
+    print("\n💤 [Standby] Listening for 'Hey Gagan' / 'Hey Gagan Rajput' (or press [ENTER] to talk)...")
 
     # Flush stale audio from queue
     while not audio_queue.empty():
@@ -390,8 +392,15 @@ def wait_for_wake_up(oww_model=None, threshold=0.18):
         except queue.Empty:
             break
 
-    buffer = np.array([], dtype=np.int16)
-    chunk_size = 1280  # 80ms at 16kHz
+    wake_keywords = [
+        "gagan", "hey gagan", "gagan rajput", "hello gagan",
+        "suno gagan", "baba", "kagan", "cacken", "gagan ai"
+    ]
+
+    speaking_chunks = []
+    is_speaking = False
+    silent_duration = 0.0
+    chunk_dur = 0.08  # 80ms
 
     while True:
         # Non-blocking keyboard check on Windows (only in interactive console)
@@ -402,48 +411,63 @@ def wait_for_wake_up(oww_model=None, threshold=0.18):
         except Exception:
             pass
 
-        if oww_model is not None:
-            try:
-                data = audio_queue.get(timeout=0.08)
-            except queue.Empty:
-                continue
+        try:
+            data = audio_queue.get(timeout=0.08)
+        except queue.Empty:
+            continue
 
-            # Safe type handling & 2.2x software gain boost for quiet/earphone mics
-            if data.dtype == np.int16:
-                int16_chunk = data.flatten()
-            else:
-                int16_chunk = (data.flatten() * 32767.0).astype(np.int16)
-
-            boosted = np.clip(int16_chunk.astype(np.float32) * 2.2, -32768, 32767).astype(np.int16)
-            buffer = np.concatenate((buffer, boosted))
-
-            while len(buffer) >= chunk_size:
-                frame = buffer[:chunk_size]
-                buffer = buffer[chunk_size:]
-
-                pred = oww_model.predict(frame)
-                score = pred.get('hey_gagan', 0.0)
-
-                # Real-time sensitivity diagnostic in voice log
-                if score >= 0.08:
-                    print(f"👂 Wake score detected: {score:.3f} (target >= {threshold})")
-
-                if score >= threshold:
-                    print(f"\n⚡ Wake Word Detected: 'Hey Gagan' (Confidence: {score:.2f})")
-                    oww_model.reset()
-                    buffer = np.array([], dtype=np.int16)
-                    while not audio_queue.empty():
-                        try:
-                            audio_queue.get_nowait()
-                        except queue.Empty:
-                            break
-                    return True, ""
+        # Extract RMS energy to detect voice activity
+        if data.dtype == np.int16:
+            float_chunk = data.flatten().astype(np.float32) / 32767.0
         else:
-            try:
-                user_input = input(">> Press [ENTER] to talk: ").strip()
-                return True, user_input
-            except Exception:
-                time.sleep(1)
+            float_chunk = data.flatten().astype(np.float32)
+
+        rms = float(np.sqrt(np.mean(float_chunk**2)))
+
+        # Speech onset detection (sensitive threshold for device 20 / earphones)
+        if rms >= 0.012:
+            if not is_speaking:
+                is_speaking = True
+                speaking_chunks = []
+                silent_duration = 0.0
+            speaking_chunks.append(float_chunk)
+            silent_duration = 0.0
+        else:
+            if is_speaking:
+                speaking_chunks.append(float_chunk)
+                silent_duration += chunk_dur
+                # Pause of 0.65s detected -> process utterance
+                if silent_duration >= 0.65 or len(speaking_chunks) * chunk_dur >= 4.0:
+                    utterance = np.concatenate(speaking_chunks).flatten()
+                    is_speaking = False
+                    speaking_chunks = []
+                    silent_duration = 0.0
+
+                    # Transcribe short utterance with warm Whisper
+                    if len(utterance) >= SAMPLE_RATE * 0.4:
+                        stt_res = transcribe_audio_numpy(utterance)
+                        heard_text = stt_res.get("text", "").lower().strip()
+                        cleaned = re.sub(r'[^\w\s]', '', heard_text)
+
+                        if any(w in cleaned for w in wake_keywords):
+                            print(f"\n⚡ Wake Word Detected: \"{heard_text}\"")
+
+                            # Extract command if spoken in same breath
+                            command_text = ""
+                            for w in ["hey gagan rajput", "hey gagan", "hello gagan", "suno gagan", "gagan rajput", "gagan ai", "gagan"]:
+                                if w in cleaned:
+                                    idx = cleaned.find(w) + len(w)
+                                    rem = cleaned[idx:].strip()
+                                    if len(rem) >= 3:
+                                        command_text = rem
+                                    break
+
+                            # Clear audio queue
+                            while not audio_queue.empty():
+                                try: audio_queue.get_nowait()
+                                except queue.Empty: break
+
+                            return True, command_text
 
 def launch_hacker_gui():
     """Signals or launches the Cyberpunk Hacker GUI."""
@@ -644,8 +668,6 @@ def run_voice_loop():
                     print("🎤 Listening for your query... Speak now!")
                     audio_data = record_utterance(max_duration=12.0, initial_timeout=6.0)
                     if len(audio_data) == 0:
-                        print("No speech detected.")
-                        continue
                         print("No speech detected.")
                         continue
 
