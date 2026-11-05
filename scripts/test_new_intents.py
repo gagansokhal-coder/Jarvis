@@ -14,3 +14,4 @@ queries = [
 for q in queries:
     ok, reply = process_general_directive(q)
     print(f"Query: '{q}' -> Handled: {ok} | Reply: '{reply}'")
+

@@ -76,3 +76,4 @@ def open_daily_streak() -> tuple[bool, str]:
 if __name__ == "__main__":
     res = get_daily_challenge()
     print("LeetCode Daily:", res)
+

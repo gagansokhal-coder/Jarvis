@@ -30,6 +30,7 @@ from automation.browser.leetcode_agent import open_daily_streak, get_daily_chall
 from automation.browser.github_agent import handle_github_request
 from automation.email_controller import get_latest_emails
 from automation.learned_workflows import match_and_run_workflow
+from automation.cleaner import purge_all_memory_and_logs
 from voice.chat_manager import ChatManager
 from voice.unlock_helper import unlock_laptop, is_workstation_locked
 
@@ -214,6 +215,11 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         time.sleep(1.0)
         focus_window("TACTICAL CYBER_CORE")
         return _respond("Opening Tactical Cyber GUI on your screen, Gagan.")
+
+    # Memory, Logs & Cache Cleaning
+    if any(k in clean for k in ["clear all logs", "clear logs", "clear chats", "clear chat", "clear memory", "clear email in memory", "clear history", "purge memory", "clean memory", "clean logs", "clear data"]):
+        res = purge_all_memory_and_logs()
+        return _respond(res["spoken_summary"])
 
     # LeetCode & Daily Streak
     if any(k in clean for k in ["leetcode", "litcode", "leadcode"]):

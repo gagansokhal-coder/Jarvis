@@ -25,3 +25,4 @@ if not found:
     for p in psutil.process_iter(['pid', 'name', 'cmdline']):
         if p.info['cmdline'] and 'hacker_gui' in ' '.join(p.info['cmdline']):
             print(f"Running PID {p.info['pid']}: {p.info['cmdline']}")
+

@@ -124,6 +124,12 @@ except ImportError:
     is_workstation_locked = _uh.is_workstation_locked
     unlock_laptop = _uh.unlock_laptop
 
+try:
+    from automation.laptop_controller import ensure_default_desktop
+except Exception:
+    def ensure_default_desktop():
+        pass
+
 import ctypes
 
 try:
@@ -507,6 +513,7 @@ def handle_system_intents(user_text: str) -> bool:
     Has full access to laptop, understands arbitrary directives, and executes actions.
     """
     try:
+        ensure_default_desktop()
         from automation.general_agent import process_general_directive
         handled, _ = process_general_directive(user_text, speak_fn=speak)
         return handled
@@ -568,6 +575,7 @@ def ensure_singleton():
 
 def run_voice_loop():
     ensure_singleton()
+    ensure_default_desktop()
     print("=" * 60)
     print("       GAGAN AI ADVANCED VOICE & SECURITY SYSTEM")
     print("=" * 60)
