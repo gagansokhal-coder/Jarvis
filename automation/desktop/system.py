@@ -80,3 +80,4 @@ def lock_workstation() -> tuple[bool, str]:
 if __name__ == '__main__':
     print(get_system_status())
     print(get_system_status_spoken())
+

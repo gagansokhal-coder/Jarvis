@@ -152,3 +152,4 @@ if __name__ == '__main__':
     spoken, display, _ = get_latest_emails(query, max_per_account=2)
     print("\n[SPOKEN]:", spoken)
     print("\n[DISPLAY]:\n", display)
+

@@ -141,14 +141,16 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 SILENCE_THRESHOLD = 0.007  # Sensitive RMS energy threshold for normal speech
 SILENCE_DURATION_SEC = 1.1 # Fast 1.1s pause cutoff for snappy conversational response
-FOLLOWUP_WINDOW_SEC = 8.0  # 8.0 seconds active listening window for follow-up dialogue
+FOLLOWUP_WINDOW_SEC = 25.0 # 25.0s active listening window for extended follow-up dialogue
 
 # Security Settings
-SECURITY_CHALLENGE_ACTIVE = True  # Ask "Who are you?" upon wake-up
+SECURITY_CHALLENGE_ACTIVE = True  # Ask "Who are you?" upon initial wake-up
+AUTH_VALIDITY_SEC = 3600          # Session stays authenticated until "stop listening gagan" or screen lock
 AUTHORIZED_IDENTITIES = [
     "bhatti rajput", "code with baba", "follower of bholenath",
     "bhattirajput", "bhatirajput", "bhati rajput", "codewithbaba",
-    "follower of bhole nath", "bholenath", "gagan rajput", "gagan"
+    "follower of bhole nath", "bholenath", "gagan rajput", "gagan",
+    "jair rajput", "jai rajput"
 ]
 
 audio_queue = queue.Queue()
@@ -591,17 +593,28 @@ def run_voice_loop():
     print(f"\n🟢 Microphone open and listening on device [{best_mic_idx}]... (Ctrl+C to stop)")
 
     conversation_context = None
+    is_authenticated = False
 
     with sd.InputStream(device=best_mic_idx, samplerate=SAMPLE_RATE, channels=CHANNELS, callback=audio_callback):
         while True:
             try:
                 activated, direct_text = wait_for_wake_up(oww_model, threshold=0.18)
 
-                # 1. ALWAYS Trigger Security Challenge: "Who are you?"
-                print("\n🔒 [Security Challenge] Verifying owner identity...")
-                authenticated = verify_identity()
-                if not authenticated:
-                    continue
+                # Reset auth if workstation is locked
+                if is_workstation_locked():
+                    is_authenticated = False
+
+                # 1. Trigger Security Challenge ONLY if not currently authenticated
+                if not is_authenticated:
+                    print("\n🔒 [Security Challenge] Verifying owner identity...")
+                    authenticated = verify_identity()
+                    if not authenticated:
+                        continue
+                    is_authenticated = True
+                else:
+                    print("🔓 [Session Active] Identity already confirmed. Bypassing security challenge.")
+                    if not direct_text:
+                        speak("Yes Gagan?", blocking=True)
 
                 # 2. Auto-Unlock laptop with PIN 1008 if workstation is locked
                 if is_workstation_locked():
@@ -629,6 +642,13 @@ def run_voice_loop():
                 if not user_text:
                     continue
 
+                # Check if user requested stop listening / sleep mode
+                if any(w in user_text.lower() for w in ["stop listening gagan", "stop listening", "go to sleep", "sleep mode", "rest now"]):
+                    print("👋 Operator ordered stop listening / sleep mode.")
+                    speak("Going to sleep, Gagan. I'll require verification next time you wake me.", blocking=True)
+                    is_authenticated = False
+                    continue
+
                 # Check Phase 4 fast-path action intents (Apps, Email, Telemetry, Desktop)
                 action_handled = handle_system_intents(user_text)
                 if not action_handled:
@@ -639,13 +659,13 @@ def run_voice_loop():
                     # 3. Speak response out loud
                     speak(ai_reply, blocking=True)
 
-                # 4. Continuous Follow-up Loop (8-second window)
+                # 4. Continuous Follow-up Loop (25-second window)
                 while True:
                     print(f"\n👂 [Follow-up Window: {FOLLOWUP_WINDOW_SEC}s] Listening for follow-up question...")
                     followup_audio = record_utterance(max_duration=14.0, initial_timeout=FOLLOWUP_WINDOW_SEC)
 
                     if len(followup_audio) == 0:
-                        print("⏱️ Follow-up window timed out. Returning to standby.")
+                        print("⏱️ Follow-up window idle. Returning to standby (session authentication preserved).")
                         break
 
                     stt_followup = transcribe_audio_numpy(followup_audio)
@@ -670,17 +690,30 @@ def run_voice_loop():
 
                     print(f"🗣️ Follow-up: \"{followup_text}\"")
 
-                    # Check for exit words
-                    if any(w in followup_text.lower() for w in ["thank you", "thanks", "bye", "goodbye", "stop", "that's all", "alvida", "dhanyavaad", "shut up", "bas"]):
-                        print("👋 User ended conversation.")
-                        speak("You're welcome, Gagan. I'm here whenever you need me.", blocking=True)
+                    # Check for explicit sleep / stop listening commands
+                    if any(w in followup_text.lower() for w in ["stop listening gagan", "stop listening", "go to sleep", "sleep mode", "rest now"]):
+                        print("👋 User ordered stop listening.")
+                        speak("Going to sleep, Gagan. I'll require verification next time you wake me.", blocking=True)
+                        is_authenticated = False
+                        break
+
+                    # Check for normal courteous pause
+                    if any(w in followup_text.lower() for w in ["thank you", "thanks", "bye", "goodbye", "alvida", "dhanyavaad", "shut up", "bas"]):
+                        print("👋 User paused conversation turn.")
+                        speak("You're welcome, Gagan. I'm standing by.", blocking=True)
                         break
 
                     # Check special system intents in follow-up
                     if handle_system_intents(followup_text):
                         if any(w in followup_text.lower() for w in ["lock laptop", "lock screen", "lock computer", "lock pc"]):
+                            is_authenticated = False
                             break
                         continue
+
+                    # Continue conversation
+                    ai_reply, conversation_context = query_ollama(followup_text, conversation_context)
+                    print(f"🤖 Gagan: \"{ai_reply}\"")
+                    speak(ai_reply, blocking=True)
 
                     # Continue conversation
                     ai_reply, conversation_context = query_ollama(followup_text, conversation_context)

@@ -11,9 +11,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 sys.path.insert(0, os.path.join(BASE_DIR, 'automation'))
 
-from automation.desktop.launcher import launch_app, close_app, search_google, open_url_in_browser, launch_hacker_gui
+from automation.desktop.launcher import launch_app, close_app, search_google, open_url_in_browser, launch_hacker_gui, focus_app
 from automation.desktop.system import get_system_status_spoken, take_screenshot, lock_workstation
 from automation.email_controller import get_latest_emails
+from automation.learned_workflows import match_and_run_workflow
 from voice.chat_manager import ChatManager
 
 def dispatch_action(user_text: str, speak_fn=None) -> tuple[bool, str]:
@@ -25,9 +26,48 @@ def dispatch_action(user_text: str, speak_fn=None) -> tuple[bool, str]:
     clean_nospace = re.sub(r'[^\w\s]', '', clean)
 
     def _respond(msg: str):
-        if speak_fn:
+        if speak_fn and msg != "STOP_LISTENING_SIGNAL":
             speak_fn(msg, blocking=True)
         return True, msg
+
+    # =========================================================================
+    # 0. SLEEP & DEAUTHENTICATION CONTROL ("stop listening gagan", "go to sleep")
+    # =========================================================================
+    if any(k in clean for k in ["stop listening gagan", "stop listening", "go to sleep", "sleep mode", "rest now"]):
+        print("💤 [Action Dispatcher] Operator requested stop listening / sleep mode.")
+        if speak_fn:
+            speak_fn("Going to sleep, Gagan. I'll require verification next time you wake me.", blocking=True)
+        return True, "STOP_LISTENING_SIGNAL"
+
+    # =========================================================================
+    # 0.5 AUTONOMOUS LEARNED WORKFLOWS & USER-TAUGHT PROCEDURES
+    # =========================================================================
+    wf_handled, wf_reply = match_and_run_workflow(user_text, speak_fn=speak_fn)
+    if wf_handled:
+        return True, wf_reply
+
+    # =========================================================================
+    # 0.7 ADVANCED CHATGPT & WHATSAPP AUTOMATION
+    # =========================================================================
+    # ChatGPT integration
+    chatgpt_match = re.search(r'\b(?:ask chatgpt|tell chatgpt|prompt chatgpt|do some work (?:from|with|on) chatgpt|search on chatgpt)\s*(?:to|about|for)?\s*(.*)', clean)
+    if chatgpt_match:
+        prompt_query = chatgpt_match.group(1).strip()
+        import urllib.parse
+        target_url = f"https://chatgpt.com/?q={urllib.parse.quote_plus(prompt_query)}" if prompt_query else "https://chatgpt.com"
+        open_url_in_browser(target_url)
+        return _respond(f"Deploying ChatGPT for: {prompt_query}" if prompt_query else "Opening ChatGPT in Chrome.")
+
+    # WhatsApp integration
+    if any(k in clean for k in ["send files to whatsapp", "send file to whatsapp", "send files through whatsapp", "whatsapp web", "open whatsapp", "share files on whatsapp"]):
+        open_url_in_browser("https://web.whatsapp.com")
+        focus_app("WhatsApp")
+        return _respond("WhatsApp Web opened in Chrome. Ready to attach and send your files, Gagan.")
+
+    # Antigravity IDE integration
+    if any(k in clean for k in ["open antigravity", "focus antigravity", "switch to antigravity", "give prompt to antigravity", "antigravity"]):
+        focus_app("Antigravity")
+        return _respond("Antigravity IDE focused and ready on screen.")
 
     # =========================================================================
     # 1. APPLICATION LAUNCHING (Chrome, VS Code, Notepad, Terminal, Calc, etc.)

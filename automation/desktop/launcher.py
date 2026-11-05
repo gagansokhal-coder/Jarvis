@@ -40,6 +40,51 @@ APPS = {
     "spotify": os.path.expandvars(r"%APPDATA%\Spotify\Spotify.exe")
 }
 
+def focus_app(window_title: str) -> bool:
+    """Bring any window to the foreground."""
+    try:
+        import win32com.client
+        shell = win32com.client.Dispatch("WScript.Shell")
+        return shell.AppActivate(window_title)
+    except Exception:
+        return False
+
+def _spawn_interactive(target: str, args: list = None, app_name: str = "") -> tuple[bool, str]:
+    """Reliably launch a Windows application and guarantee it appears on screen."""
+    # Special handling for Chrome & browsers: force a visible interactive window
+    if any(k in app_name.lower() or k in target.lower() for k in ["chrome", "browser", "chrme", "crome"]):
+        try:
+            # 1. If Chrome window is already open, focus it
+            if focus_app("Chrome") or focus_app("Google Chrome"):
+                return True, "Google Chrome brought to focus."
+            # 2. Otherwise open a new visible window
+            cmd = [target, "--new-window", "https://www.google.com"] if not args else [target] + args
+            subprocess.Popen(cmd)
+            return True, "Launched Google Chrome."
+        except Exception:
+            try:
+                os.startfile(target)
+                return True, "Launched Google Chrome."
+            except Exception as e:
+                return False, f"Failed to start Chrome: {e}"
+
+    # For settings / protocols
+    if target.startswith("ms-settings:") or target.startswith("http:") or target.startswith("https:"):
+        os.startfile(target)
+        return True, f"Opened {app_name}."
+
+    # Standard desktop applications (VS Code, Notepad, Calc, Terminal, Explorer, etc.)
+    try:
+        os.startfile(target)
+        return True, f"Launched {app_name}."
+    except Exception:
+        try:
+            cmd = [target] + (args or [])
+            subprocess.Popen(cmd)
+            return True, f"Launched {app_name}."
+        except Exception as e:
+            return False, f"Failed to launch {app_name}: {e}"
+
 def launch_app(app_name: str, args: list = None) -> tuple[bool, str]:
     """Launch a desktop application in milliseconds."""
     clean_name = app_name.lower().strip()
@@ -47,16 +92,7 @@ def launch_app(app_name: str, args: list = None) -> tuple[bool, str]:
     # 1. Direct registry lookup
     if clean_name in APPS:
         target = APPS[clean_name]
-        try:
-            if target.startswith("ms-settings:"):
-                os.startfile(target)
-                return True, f"Opened Windows Settings."
-            if os.path.exists(target) or shutil.which(target):
-                cmd = [target] + (args or [])
-                subprocess.Popen(cmd, creationflags=subprocess.DETACHED_PROCESS if os.name == 'nt' else 0)
-                return True, f"Launched {app_name}."
-        except Exception as e:
-            return False, f"Failed to launch {app_name}: {e}"
+        return _spawn_interactive(target, args=args, app_name=clean_name)
 
     # 2. Substring & Fuzzy match in registry
     best_match = None
@@ -73,17 +109,12 @@ def launch_app(app_name: str, args: list = None) -> tuple[bool, str]:
 
     if best_match:
         name, target = best_match
-        try:
-            if os.path.exists(target) or shutil.which(target):
-                cmd = [target] + (args or [])
-                subprocess.Popen(cmd, creationflags=subprocess.DETACHED_PROCESS if os.name == 'nt' else 0)
-                return True, f"Launched {name}."
-        except Exception:
-            pass
+        return _spawn_interactive(target, args=args, app_name=name)
 
-    # 3. Fallback to Windows os.startfile
+    # 3. Fallback to Windows os.startfile / shutil.which
     try:
-        os.startfile(app_name)
+        resolved = shutil.which(app_name) or app_name
+        os.startfile(resolved)
         return True, f"Launched {app_name}."
     except Exception as e:
         return False, f"Could not find or launch application '{app_name}'."
