@@ -1,8 +1,8 @@
 """
 General AI Autonomous Agent for Gagan Rajput's Laptop.
 Combines sub-10ms fast-paths with autonomous LLM reasoning and real Windows execution.
-Has full access to Windows PowerShell, applications, files, browsers, and Google services.
-Guarantees interactive GUI window visibility on Gagan's physical display.
+Inspired by ChatGPT Voice Mode and Gemini Live: speaks naturally, warmly, and intelligently
+for ANY question or task in the world, without robotic lines like "Directive executed".
 """
 import os
 import sys
@@ -25,35 +25,34 @@ from voice.chat_manager import ChatManager
 
 OLLAMA_API = "http://127.0.0.1:11434/api/generate"
 
-SYSTEM_PROMPT = """You are Gagan AI, an elite, autonomous General AI assistant running directly on Gagan Rajput's Windows 11 laptop.
-You have FULL, UNRESTRICTED ACCESS to the entire computer. You are an autonomous AI operator.
+SYSTEM_PROMPT = """You are Gagan AI, an elite, highly intelligent General AI assistant built specifically for Gagan Rajput, inspired by ChatGPT and Gemini.
+You have two core powers:
+1. Universal Knowledge: You possess vast, encyclopedic intelligence across science, coding, software architecture, mathematics, history, literature, philosophy, and everyday conversation. You speak with natural warmth, intellect, and clarity—exactly like ChatGPT Voice Mode or Gemini Live.
+2. Real Laptop & Web Control: You run natively on Gagan's Windows 11 laptop and can seamlessly open applications, navigate the web, check college and personal emails, open folders, and execute PowerShell commands.
 
-Laptop Environment:
-- Owner: Gagan Rajput (Gagan)
-- OS: Windows 11 Pro
-- Active Desktop Folder: D:\\Desktop
-- Desktop Shortcuts: 'gagan - Chrome' (Personal Chrome Profile), 'Google Chrome', 'YouTube', 'Visual Studio Code', 'Antigravity IDE', 'gaganAI' folder
+Laptop & Personal Context:
+- Owner: Gagan Rajput (NIT Jalandhar CSE)
+- System: Windows 11 Pro laptop
+- Desktop Directory: D:\\Desktop
+- Desktop Shortcuts: 'gagan - Chrome' (Personal Chrome profile), 'Google Chrome', 'YouTube', 'Visual Studio Code', 'Antigravity IDE', 'gaganAI' folder
 - Real Email Accounts: gagandeep.cs.25@nitj.ac.in (NIT Jalandhar CSE College), gaganrajput1008@gmail.com (Personal), rajputdeveloper44@gmail.com (Developer)
 
-Your Autonomous Capabilities:
-1. Open and control ANY desktop app or website.
-2. Open ANY folder on the laptop (Desktop is D:\\Desktop, Downloads, Documents, Pictures, etc.).
-3. Execute ANY Windows PowerShell command to inspect files, manage system, automate tasks.
-4. Fetch real-time emails across Gagan's accounts.
-5. Control YouTube, WhatsApp Web, ChatGPT, Antigravity IDE, etc.
-
-If the user gives a command requiring computer action, include an ACTION line:
-ACTION: open_app: <app_name>
-ACTION: open_url: <url>
-ACTION: open_folder: <folder_name_or_path>
-ACTION: powershell: <powershell_command>
-ACTION: email: <college|gagan rajput|developer|all>
-ACTION: search: <query>
-ACTION: lock: pc
-ACTION: none
-
-Followed by your natural, concise response to speak to Gagan (1-2 sentences).
-Never say "I'm sorry, but I can't assist with that request". You have full permission to assist with everything.
+Rules for Responding:
+1. For general conversation, questions, explanations, coding, advice, or thoughts:
+   - Reply directly with intelligence, depth, and concise clarity in 1 to 2 spoken sentences (ideal for real-time voice).
+   - Do NOT output any ACTION line. Speak naturally like ChatGPT or Gemini.
+2. For computer or web actions (when the user asks you to open an app, open a website, check emails, open a folder, run a command, or search):
+   - Include an ACTION line on the very first line:
+     ACTION: open_app: <app_name>
+     ACTION: open_url: <url>
+     ACTION: open_folder: <folder_name_or_path>
+     ACTION: email: <college|personal|developer|all>
+     ACTION: powershell: <powershell_command>
+     ACTION: search: <query>
+     ACTION: lock: pc
+   - Followed by a warm, natural sentence explaining what you did (e.g. "Opening Chrome for you now, Gagan", "I've fetched your latest emails from NIT Jalandhar. Here is what came in...").
+3. NEVER say robotic lines like "Directive executed", "Directive executed on your laptop", or "Task completed". Always speak like a human pair programmer and loyal companion.
+4. If the user speaks in Hindi, Punjabi, or Hinglish, answer naturally in the same language!
 """
 
 def execute_agent_action(action_str: str) -> tuple[bool, str]:
@@ -82,14 +81,18 @@ def execute_agent_action(action_str: str) -> tuple[bool, str]:
 
 def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]:
     """
-    Main entry point for ANY user instruction:
+    Main entry point for ANY user instruction or question:
     1. Checks Learned Workflows & Sleep controls.
     2. Runs Fast-Path (<10ms) for common desktop, app, folder & email queries.
-    3. Runs General AI Autonomous Reasoning for any arbitrary computer task.
+    3. Runs General AI Autonomous Reasoning for any arbitrary question or computer task (ChatGPT / Gemini mode).
     """
     clean = user_text.lower().strip()
+    session_id = ChatManager.get_active_session()
 
     def _respond(msg: str):
+        # Save interaction to conversation memory
+        ChatManager.add_message(session_id, "user", user_text, source="voice")
+        ChatManager.add_message(session_id, "assistant", msg, source="voice")
         if speak_fn and msg != "STOP_LISTENING_SIGNAL":
             speak_fn(msg, blocking=True)
         return True, msg
@@ -110,9 +113,9 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         return True, wf_reply
 
     # =========================================================================
-    # 1. FAST-PATH DIRECT INTENTS (Sub-10ms for instant feel)
+    # 1. FAST-PATH DIRECT INTENTS (Sub-10ms for instant conversational feel)
     # =========================================================================
-    # Chrome opening (handles all phonetic variants: chrome, grom, crome, chrom, chorm, browser, etc.)
+    # Chrome opening (handles all phonetic variants)
     chrome_variants = ["open chrome", "open grom", "open crome", "open chrom", "open chorm", "open browser", "start chrome", "launch chrome", "open google chrome"]
     if any(k in clean for k in chrome_variants):
         open_interactive_app("chrome")
@@ -121,7 +124,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     # YouTube (App or Web)
     if any(k in clean for k in ["open youtube", "go to youtube", "start youtube", "play youtube", "launch youtube"]):
         open_interactive_app("youtube")
-        return _respond("Opening YouTube on your screen, Gagan.")
+        return _respond("Opening YouTube for you, Gagan.")
 
     # WhatsApp Web
     if any(k in clean for k in ["open whatsapp", "go to whatsapp", "send files to whatsapp", "whatsapp web", "send files through whatsapp"]):
@@ -131,7 +134,7 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
     # ChatGPT
     if any(k in clean for k in ["open chatgpt", "go to chatgpt", "ask chatgpt", "open gpt"]):
         open_url("https://chatgpt.com")
-        return _respond("Opening ChatGPT in Chrome, Gagan.")
+        return _respond("Opening ChatGPT in Chrome for you, Gagan.")
 
     # Antigravity IDE
     if any(k in clean for k in ["open antigravity", "focus antigravity", "switch to antigravity"]):
@@ -172,29 +175,20 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         lock_screen()
         return _respond("Workstation locked.")
 
-    # Generic App Launching
-    launch_match = re.search(r'\b(?:open|launch|start|run|go to)\s+([a-zA-Z0-9\s]+)', clean)
-    if launch_match and not any(k in clean for k in ["gui", "chat", "session"]):
-        target_app = launch_match.group(1).strip()
-        target_app = re.split(r'\b(?:now|please|for me|quickly)\b', target_app)[0].strip()
-        success, msg = open_interactive_app(target_app)
-        if success:
-            return _respond(f"Opening {target_app} on your screen, Gagan.")
-
     # =========================================================================
-    # 2. GENERAL AI AUTONOMOUS AGENT REASONING (For ANY Arbitrary Directive)
+    # 2. GENERAL AI AUTONOMOUS BRAIN (ChatGPT & Gemini Mode for ANY Task in the World)
     # =========================================================================
-    print(f"🧠 [General AI Agent] Reasoning on arbitrary user directive: \"{user_text}\"...")
+    print(f"🧠 [Gagan AI Brain] Processing query: \"{user_text}\"...")
 
-    recent_history = ChatManager.get_recent_history_context(ChatManager.get_active_session(), limit=4)
+    recent_history = ChatManager.get_recent_history_context(session_id, limit=4)
     history_lines = [f"{m['role'].upper()}: {m['content']}" for m in recent_history]
     context_str = "\n".join(history_lines)
 
     full_prompt = (
         f"{SYSTEM_PROMPT}\n"
-        f"Context:\n{context_str}\n\n"
-        f"Operator Directive: {user_text}\n"
-        f"Gagan AI Output:"
+        f"Conversation Context:\n{context_str}\n\n"
+        f"User: {user_text}\n"
+        f"Gagan AI:"
     )
 
     payload = {
@@ -202,10 +196,11 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         "prompt": full_prompt,
         "stream": False,
         "options": {
-            "temperature": 0.2,
-            "num_predict": 100,
+            "temperature": 0.25,
+            "num_predict": 75,
             "num_thread": 8,
-            "num_ctx": 1024
+            "num_ctx": 1024,
+            "stop": ["User:", "\nUser:", "Operator:", "\nOperator:", "Human:", "\nHuman:"]
         }
     }
 
@@ -213,28 +208,60 @@ def process_general_directive(user_text: str, speak_fn=None) -> tuple[bool, str]
         resp = requests.post(OLLAMA_API, json=payload, timeout=25)
         raw_output = resp.json().get("response", "").strip()
 
+        # Stop hallucinated multi-turn user outputs
+        raw_output = re.split(r'\n(?:User|Operator|Human):', raw_output, flags=re.IGNORECASE)[0].strip()
+
         # Check for ACTION tag
         action_match = re.search(r'ACTION:\s*([^\n]+)', raw_output, re.IGNORECASE)
         reply_text = raw_output
+        action_executed = False
 
         if action_match:
             action_content = action_match.group(1).strip()
-            print(f"⚡ [General AI Agent] Autonomous Action Detected: {action_content}")
+            print(f"⚡ [Gagan AI Brain] Autonomous Action: {action_content}")
+            act_parts = action_content.split(":", 1)
+            act_type = act_parts[0].strip().lower()
+            act_target = act_parts[1].strip() if len(act_parts) > 1 else ""
+
             execute_agent_action(action_content)
-            # Remove ACTION line from spoken text
-            reply_text = re.sub(r'ACTION:\s*[^\n]+', '', raw_output).strip()
+            action_executed = True
 
+            # Strip the ACTION line from spoken response
+            reply_text = re.sub(r'ACTION:\s*[^\n]+', '', raw_output, flags=re.IGNORECASE).strip()
+
+            # If the model didn't provide a spoken sentence alongside the action, generate a natural human response
+            if not reply_text:
+                if act_type == "open_app":
+                    reply_text = f"I've opened {act_target or 'the app'} on your screen, Gagan."
+                elif act_type == "open_url":
+                    reply_text = f"Opening {act_target} in Chrome for you, Gagan."
+                elif act_type == "open_folder":
+                    reply_text = f"Opened your {act_target or 'desktop'} folder on screen, Gagan."
+                elif act_type == "search":
+                    reply_text = f"Searching Google for {act_target} in Chrome."
+                elif act_type == "lock":
+                    reply_text = "Workstation locked."
+                elif act_type == "powershell":
+                    reply_text = "I've run that command on your laptop, Gagan."
+                else:
+                    reply_text = "Done, Gagan. What would you like to do next?"
+
+        # Fallback if reply is somehow still empty
         if not reply_text:
-            reply_text = "Directive executed on your laptop, Gagan."
+            reply_text = "I'm with you, Gagan. What would you like to explore or do next?"
 
-        # Filter out canned refusal hallucinations
-        for refusal in ["can't assist", "cannot assist", "unable to assist"]:
+        # Filter out any canned refusal hallucinations
+        for refusal in ["can't assist", "cannot assist", "unable to assist", "i cannot assist"]:
             if refusal in reply_text.lower():
-                reply_text = "I'm on it, Gagan. What would you like me to do next?"
+                reply_text = "I'm on it, Gagan. How would you like me to handle this?"
+
+        # Strip robotic lines if they accidentally slip through
+        reply_text = re.sub(r'\b(Directive executed|Task completed|Action detected)\b', '', reply_text, flags=re.IGNORECASE).strip()
+        if not reply_text:
+            reply_text = "I've taken care of that for you, Gagan."
 
         return _respond(reply_text)
 
     except Exception as e:
-        print(f"General AI error: {e}")
-        # Fallback to direct search or helpful response
-        return _respond("I'm with you, Gagan. Please state your command.")
+        print(f"General AI Brain error: {e}")
+        return _respond("I'm with you, Gagan. Please go ahead with your question or command.")

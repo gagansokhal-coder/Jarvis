@@ -16,3 +16,4 @@ for sc in shortcuts:
         print(f"TargetPath: {lnk.TargetPath}")
         print(f"Arguments:  {lnk.Arguments}")
         print(f"WorkingDir: {lnk.WorkingDirectory}")
+
