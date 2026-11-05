@@ -18,7 +18,8 @@ def get_system_status() -> dict:
     """Get real-time CPU, RAM, Disk, and Battery telemetry."""
     cpu = psutil.cpu_percent(interval=0.2)
     ram = psutil.virtual_memory()
-    disk = psutil.disk_usage("D:\\" if os.path.exists("D:\\") else "C:\\")
+    current_drive = os.path.splitdrive(os.path.abspath(BASE_DIR))[0] + "\\"
+    disk = psutil.disk_usage(current_drive if os.path.exists(current_drive) else os.path.expanduser("~"))
     battery = psutil.sensors_battery()
     
     battery_info = "Unknown"
