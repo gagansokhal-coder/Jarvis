@@ -6,6 +6,10 @@ credentials/
 *_secret.json
 client_secret.json
 
+# Binary executables
+bin/
+*.exe
+
 # Models (too large for git)
 models/
 *.gguf

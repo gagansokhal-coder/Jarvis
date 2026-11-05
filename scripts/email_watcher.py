@@ -136,7 +136,41 @@ def process_new_email(msg_data, account_email, cal_service, cal_account):
             lines.append(f"   • *Timing:* {calendar_details['time']}")
             lines.append(f"   • *Venue:* {calendar_details['venue']}")
 
-        lines.append(f"\n📝 *Snippet:* {snippet[:150]}...")
+        # Format complete email content
+        clean_body = body.strip() if body else snippet.strip()
+        if len(clean_body) > 2500:
+            preview_body = clean_body[:2500] + "\n\n...[Full email archived in Gagan AI storage]"
+        else:
+            preview_body = clean_body
+
+        lines.append(f"\n📄 *Complete Message Content:*\n{preview_body}")
+
+        # Save latest email record for instant voice, OpenClaw, and search queries
+        latest_record = {
+            "account": account_email,
+            "sender": clean_sender,
+            "subject": subject,
+            "category": category,
+            "urgency": urgency,
+            "deadline": deadline,
+            "body": clean_body,
+            "received_at": datetime.now(IST).strftime("%Y-%m-%d %I:%M:%S %p IST")
+        }
+        try:
+            data_dir = os.path.join(BASE_DIR, 'data')
+            os.makedirs(data_dir, exist_ok=True)
+            with open(os.path.join(data_dir, 'latest_email.json'), 'w', encoding='utf-8') as f:
+                json.dump(latest_record, f, indent=2, ensure_ascii=False)
+            with open(os.path.join(data_dir, 'latest_email.txt'), 'w', encoding='utf-8') as f:
+                f.write(f"Account: {account_email}\nFrom: {clean_sender}\nSubject: {subject}\nReceived: {latest_record['received_at']}\nCategory: {category}\n\n{clean_body}")
+
+            # Also mirror to OpenClaw workspace
+            ws_dir = os.path.join(data_dir, 'workspace')
+            os.makedirs(ws_dir, exist_ok=True)
+            with open(os.path.join(ws_dir, 'LATEST_EMAIL.md'), 'w', encoding='utf-8') as f:
+                f.write(f"# Latest Received Email\n- **Account:** `{account_email}`\n- **From:** {clean_sender}\n- **Subject:** {subject}\n- **Received:** {latest_record['received_at']}\n- **Category:** {category}\n\n## Content:\n```\n{clean_body}\n```\n")
+        except Exception as e:
+            print(f"Error saving latest email: {e}", file=sys.stderr)
 
         try:
             send_telegram_message("\n".join(lines))

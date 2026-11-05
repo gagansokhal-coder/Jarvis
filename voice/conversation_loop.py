@@ -374,7 +374,7 @@ def verify_identity() -> bool:
         print(f"Telegram alert error: {e}", file=sys.stderr)
     return False
 
-def wait_for_wake_up(oww_model=None, threshold=0.40):
+def wait_for_wake_up(oww_model=None, threshold=0.22):
     """Wait for acoustic wake phrase ('Hey Gagan') or keyboard press."""
     if oww_model:
         print("\n💤 [Standby] Listening for 'Hey Gagan' / 'Hey Gagan Rajput' (or press [ENTER] to talk)...")
@@ -415,6 +415,10 @@ def wait_for_wake_up(oww_model=None, threshold=0.40):
 
                 pred = oww_model.predict(frame)
                 score = pred.get('hey_gagan', 0.0)
+
+                # Real-time sensitivity diagnostic in voice log
+                if score >= 0.08:
+                    print(f"👂 Wake score detected: {score:.3f} (threshold: {threshold})")
 
                 if score >= threshold:
                     print(f"\n⚡ Wake Word Detected: 'Hey Gagan' (Confidence: {score:.2f})")
@@ -495,7 +499,69 @@ def handle_system_intents(user_text: str) -> bool:
         speak("Memory optimization complete. Stale records pruned.", blocking=True)
         return True
 
+    # 4. Read Latest Email from Storage
+    email_triggers = [
+        "read latest email", "read complete email", "give me complete mail",
+        "read the mail", "read mail", "check latest email", "what is the latest email",
+        "any new email", "show latest email", "check my email", "tell me the mail"
+    ]
+    if any(t in clean for t in email_triggers):
+        latest_file = os.path.join(BASE_DIR, "data", "latest_email.txt")
+        if os.path.exists(latest_file):
+            try:
+                with open(latest_file, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                print(f"📧 Reading latest email from storage:\n{content}")
+                lines = content.split("\n\n")
+                header_part = lines[0] if lines else "Latest email found."
+                body_part = lines[1] if len(lines) > 1 else ""
+                speak(f"Here is your latest email: {header_part}. {body_part[:250]}", blocking=True)
+                return True
+            except Exception as e:
+                print(f"Error reading latest email: {e}")
+        else:
+            speak("No new emails found in storage.", blocking=True)
+            return True
+
     return False
+
+def detect_best_mic():
+    """
+    Auto-detect the highest signal input device:
+    - Tests candidate input devices (SST direct hardware, earphone/headset, etc.)
+    - Returns device index with the strongest RMS audio stream
+    """
+    try:
+        devices = sd.query_devices()
+        candidates = []
+        for idx, d in enumerate(devices):
+            if d.get('max_input_channels', 0) > 0:
+                name = d.get('name', '').lower()
+                if any(term in name for term in ['mic', 'headset', 'earphone', 'input']):
+                    try:
+                        samples = []
+                        def _test_cb(indata, frames, time_info, status):
+                            samples.append(float(np.sqrt(np.mean(indata**2))))
+                        with sd.InputStream(device=idx, samplerate=SAMPLE_RATE, channels=1, callback=_test_cb):
+                            time.sleep(0.12)
+                        rms = max(samples) if samples else 0.0
+                        candidates.append((rms, idx, d.get('name', '')))
+                    except Exception:
+                        pass
+        if candidates:
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            best = candidates[0]
+            print(f"🎙️ Auto-Selected Input Device: [{best[1]}] '{best[2]}' (RMS Signal: {best[0]:.6f})")
+            return best[1]
+    except Exception as e:
+        print(f"⚠️ Microphone auto-detection warning: {e}")
+    # Fallback to direct SST device 20 if available
+    try:
+        sd.check_input_settings(device=20, samplerate=SAMPLE_RATE, channels=1)
+        print("🎙️ Falling back to Hardware SST Microphone [Device 20]")
+        return 20
+    except Exception:
+        return None
 
 _sentinel_mutex = None
 
@@ -517,7 +583,7 @@ def run_voice_loop():
     print("       GAGAN AI ADVANCED VOICE & SECURITY SYSTEM")
     print("=" * 60)
     print("Multi-Wake Phrases: 'Hey Gagan', 'Hey Gagan Rajput', 'Gagan'")
-    print(f"Security Challenge: {'ACTIVE (Who are you?)' if SECURITY_CHALLENGE_ACTIVE else 'DISABLED'}")
+    print(f"Security Challenge: {'ACTIVE ON LOCK (Who are you?)' if SECURITY_CHALLENGE_ACTIVE else 'DISABLED'}")
     print("Follow-up Window: 8.0 seconds")
     print("Screen Unlock PIN: '1008' (Active)")
     print("Tactical Hacker GUI: Supported ('Hey Gagan, open text option')")
@@ -537,33 +603,41 @@ def run_voice_loop():
         except Exception as e:
             print(f"⚠️ Could not initialize openWakeWord: {e}")
 
-    print("\n🟢 Microphone open and listening... (Ctrl+C to stop)")
+    # Auto-detect optimal microphone endpoint (Device 20 SST direct hardware or headset)
+    best_mic_idx = detect_best_mic()
+    print(f"\n🟢 Microphone open and listening on device [{best_mic_idx}]... (Ctrl+C to stop)")
 
     conversation_context = None
 
-    with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, callback=audio_callback):
+    with sd.InputStream(device=best_mic_idx, samplerate=SAMPLE_RATE, channels=CHANNELS, callback=audio_callback):
         while True:
             try:
-                activated, direct_text = wait_for_wake_up(oww_model, threshold=0.40)
+                activated, direct_text = wait_for_wake_up(oww_model, threshold=0.22)
 
-                # Auto-Unlock laptop with PIN 1008 if workstation is locked
-                if is_workstation_locked():
-                    print("🔒 Workstation locked! Auto-unlocking with PIN 1008...")
-                    unlocked = unlock_laptop("1008")
-                    if unlocked:
-                        speak("Welcome back, Gagan. Workstation unlocked.", blocking=True)
+                # Check lock status
+                locked = is_workstation_locked()
+                if locked:
+                    print("🔒 Workstation locked! Challenging identity before unlocking...")
+                    authenticated = verify_identity()
+                    if authenticated:
+                        unlocked = unlock_laptop("1008")
+                        if unlocked:
+                            speak("Welcome back, Gagan. Workstation unlocked.", blocking=True)
+                    else:
+                        continue
+                else:
+                    # Workstation is already unlocked: greet immediately and listen
+                    if not direct_text:
+                        print("⚡ Gagan AI: 'Yes Gagan, I am listening.'")
+                        speak("Yes Gagan, I'm listening.", blocking=True)
 
-                # If activated:
+                # If activated via voice:
                 if not direct_text:
-                    # 1. Security Challenge: "Who are you?"
-                    if SECURITY_CHALLENGE_ACTIVE:
-                        authenticated = verify_identity()
-                        if not authenticated:
-                            continue
-
                     print("🎤 Listening for your query... Speak now!")
                     audio_data = record_utterance(max_duration=12.0, initial_timeout=6.0)
                     if len(audio_data) == 0:
+                        print("No speech detected.")
+                        continue
                         print("No speech detected.")
                         continue
 

@@ -78,10 +78,11 @@ try {
 }
 
 # 5. Clean up any stale lock files before starting
-$lock1 = Join-Path $WorkspaceRoot "data\tmp\openclaw\gateway.state.lock"
-$lock2 = Join-Path $WorkspaceRoot "data\state\openclaw.sqlite.cron-authority.lock"
-if (Test-Path $lock1) { Remove-Item -Path $lock1 -Force -ErrorAction SilentlyContinue }
-if (Test-Path $lock2) { Remove-Item -Path $lock2 -Force -ErrorAction SilentlyContinue }
+$lockFiles = Get-ChildItem -Path (Join-Path $WorkspaceRoot "data") -Recurse -Filter "*lock*" -File -ErrorAction SilentlyContinue
+if ($lockFiles) {
+    $lockFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+    Log-Message "[OK] Cleaned up stale lock files in data directory." "Green"
+}
 
 # 6. Validate OpenClaw configuration
 Log-Message "[INFO] Validating OpenClaw configuration..."
