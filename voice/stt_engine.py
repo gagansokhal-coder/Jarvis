@@ -28,10 +28,10 @@ DEFAULT_INITIAL_PROMPT = (
 
 _MODEL_INSTANCE = None
 
-def get_whisper_model(model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
+def get_whisper_model(model_size: str = "base", device: str = "cpu", compute_type: str = "int8"):
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
-        # Load high-accuracy small model with lightweight int8 quantization
+        # Load high-speed base model with lightweight int8 quantization for instant CPU response
         try:
             _MODEL_INSTANCE = WhisperModel(model_size, device=device, compute_type=compute_type)
         except Exception:
@@ -47,11 +47,11 @@ def transcribe_audio_file(audio_path: str, language: str = None, initial_prompt:
     prompt = initial_prompt or DEFAULT_INITIAL_PROMPT
     segments, info = model.transcribe(
         audio_path,
-        beam_size=5,
+        beam_size=1, # Blazing fast 1-beam greedy decode for low CPU latency
         language=language,
         initial_prompt=prompt,
         vad_filter=True, # Filters out background silence
-        vad_parameters=dict(min_silence_duration_ms=400, threshold=0.4)
+        vad_parameters=dict(min_silence_duration_ms=250, threshold=0.4)
     )
 
     full_text = " ".join([segment.text for segment in segments]).strip()

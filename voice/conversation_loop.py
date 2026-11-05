@@ -140,7 +140,7 @@ except ImportError:
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SILENCE_THRESHOLD = 0.007  # Sensitive RMS energy threshold for normal speech
-SILENCE_DURATION_SEC = 2.4 # Generous 2.4s pause tolerance so thinking pauses don't cut off speech
+SILENCE_DURATION_SEC = 1.1 # Fast 1.1s pause cutoff for snappy conversational response
 FOLLOWUP_WINDOW_SEC = 8.0  # 8.0 seconds active listening window for follow-up dialogue
 
 # Security Settings
@@ -436,8 +436,8 @@ def wait_for_wake_up(oww_model=None, threshold=0.18):
             if is_speaking:
                 speaking_chunks.append(float_chunk)
                 silent_duration += chunk_dur
-                # Pause of 0.65s detected -> process utterance
-                if silent_duration >= 0.65 or len(speaking_chunks) * chunk_dur >= 4.0:
+                # Pause of 0.35s detected -> fast process utterance
+                if silent_duration >= 0.35 or len(speaking_chunks) * chunk_dur >= 3.5:
                     utterance = np.concatenate(speaking_chunks).flatten()
                     is_speaking = False
                     speaking_chunks = []
@@ -646,22 +646,18 @@ def run_voice_loop():
             try:
                 activated, direct_text = wait_for_wake_up(oww_model, threshold=0.18)
 
-                # Check lock status
-                locked = is_workstation_locked()
-                if locked:
-                    print("🔒 Workstation locked! Challenging identity before unlocking...")
-                    authenticated = verify_identity()
-                    if authenticated:
-                        unlocked = unlock_laptop("1008")
-                        if unlocked:
-                            speak("Welcome back, Gagan. Workstation unlocked.", blocking=True)
-                    else:
-                        continue
-                else:
-                    # Workstation is already unlocked: greet immediately and listen
-                    if not direct_text:
-                        print("⚡ Gagan AI: 'Yes Gagan, I am listening.'")
-                        speak("Yes Gagan, I'm listening.", blocking=True)
+                # 1. ALWAYS Trigger Security Challenge: "Who are you?"
+                print("\n🔒 [Security Challenge] Verifying owner identity...")
+                authenticated = verify_identity()
+                if not authenticated:
+                    continue
+
+                # 2. Auto-Unlock laptop with PIN 1008 if workstation is locked
+                if is_workstation_locked():
+                    print("🔒 Workstation locked! Auto-unlocking with PIN 1008...")
+                    unlocked = unlock_laptop("1008")
+                    if unlocked:
+                        speak("Workstation unlocked with PIN 1008.", blocking=True)
 
                 # If activated via voice:
                 if not direct_text:
