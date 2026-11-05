@@ -534,16 +534,16 @@ async def handle_voice_turn(request):
         if not user_text:
             return web.json_response({"user_text": "", "ai_reply": "", "audio_base64": ""})
 
-        # Check Phase 4 Fast-path Action Dispatcher (Apps, Email, System, Search)
+        # General AI Autonomous Agent (Full laptop access & actions)
         try:
-            from automation.action_dispatcher import dispatch_action
-            handled, action_reply = dispatch_action(user_text)
+            from automation.general_agent import process_general_directive
+            handled, action_reply = process_general_directive(user_text)
             if handled:
                 ai_reply = action_reply
             else:
                 ai_reply, _ = query_ollama(user_text)
         except Exception as e:
-            print(f"Action dispatcher error: {e}")
+            print(f"General AI error: {e}")
             ai_reply, _ = query_ollama(user_text)
 
         # 2. Synthesize with Edge-TTS
@@ -571,14 +571,14 @@ async def handle_text_query(request):
         return web.json_response({"error": "Empty query"}, status=400)
 
     try:
-        from automation.action_dispatcher import dispatch_action
-        handled, action_reply = dispatch_action(query)
+        from automation.general_agent import process_general_directive
+        handled, action_reply = process_general_directive(query)
         if handled:
             ai_reply = action_reply
         else:
             ai_reply, _ = query_ollama(query)
     except Exception as e:
-        print(f"Action dispatcher error: {e}")
+        print(f"General AI error: {e}")
         ai_reply, _ = query_ollama(query)
 
     audio_mp3 = synthesize_to_file(ai_reply)

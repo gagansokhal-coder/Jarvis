@@ -503,16 +503,15 @@ def launch_hacker_gui():
 
 def handle_system_intents(user_text: str) -> bool:
     """
-    Delegate to Phase 4 Action Dispatcher:
-    Instantly routes app launching/closing, account-specific email fetching,
-    system telemetry, screenshots, and screen locking in <10ms.
+    Delegate to General AI Autonomous Agent:
+    Has full access to laptop, understands arbitrary directives, and executes actions.
     """
     try:
-        from automation.action_dispatcher import dispatch_action
-        handled, _ = dispatch_action(user_text, speak_fn=speak)
+        from automation.general_agent import process_general_directive
+        handled, _ = process_general_directive(user_text, speak_fn=speak)
         return handled
     except Exception as e:
-        print(f"⚠️ Action dispatcher error: {e}")
+        print(f"⚠️ General AI Agent error: {e}")
         return False
 
 def detect_best_mic():
