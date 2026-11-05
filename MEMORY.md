@@ -34,13 +34,15 @@
 | **Phase 4: Automation** | ✅ COMPLETE — Playwright Browser Automation, NITJ College Portal, Interactive Explorer App Launcher, Dynamic Discovery (Zero Hardcoding), PowerShell Security Sandbox & ChatGPT/Gemini Brain |
 | **Phase 5: Polish** | 🔲 NOT STARTED |
 
-> **LAST UPDATED:** 2026-11-05T19:50:00+05:30
-> **LAST AGENT ACTION:** Completed Phase 4 Full Automation across all 5 pillars:
-> 1. AI Browser Automation with Playwright + local LLM page extraction.
-> 2. NIT Jalandhar Portal integration with secure OS Keyring credential storage and live circular extraction.
-> 3. Dynamic Windows desktop application launcher (`automation/laptop_controller.py`) using Windows Explorer Desktop COM (`WinSta0\Default`) and Win32 `force_window_foreground()` to guarantee all apps (Chrome, YouTube, VS Code, Edge, Folders) pop up directly on Gagan's physical display.
-> 4. PowerShell Security Sandbox (`automation/desktop/sandbox.py`) with command whitelisting and operator approval for dangerous commands.
-> 5. Unified General AI Brain (`automation/general_agent.py`) operating in conversational ChatGPT/Gemini mode with zero robotic canned phrases. All user storage and data files mapped and categorized. Zero recurring cloud costs (₹0).
+> **LAST UPDATED:** 2026-11-05T21:00:00+05:30
+> **LAST AGENT ACTION:** Completed Phase 4 Voice, Browser & Desktop Polish:
+> 1. Speech Recognition Accuracy: Faster-Whisper vocabulary prompt biasing and phonetic cleaner to eliminate misrecognitions (e.g. "leetcode", "gagansokhal-coder", "gui", "text option").
+> 2. Audio Loudness: Edge-TTS volume increased +50% and output audio gain amplified 35% with soft clipping for crystal clear laptop speaker audio.
+> 3. Alphanumeric Screen Unlock: Win32 `VkKeyScanW` key typing with lock screen curtain dismissal for arbitrary passwords and PINs.
+> 4. LeetCode Automation: Direct GraphQL query to `leetcode.com` fetching active daily challenge and launching in Chrome.
+> 5. GitHub Controller: Profile navigation and repo search for `gagansokhal-coder` in Chrome.
+> 6. Process Terminator: Added alias resolver in `automation/desktop/launcher.py` (e.g. "microsoft edge" -> `msedge.exe`).
+> 7. Ollama Speed Optimization: Added `keep_alive: "24h"` so Phi-4-mini stays warm in RAM for sub-second responses. Zero hardcoding, ₹0 cost.
 
 ---
 
