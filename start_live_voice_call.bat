@@ -11,3 +11,4 @@ echo.
 echo Starting Voice Call Server...
 .\venv\Scripts\python.exe voice\web_voice_call.py
 pause
+

@@ -18,3 +18,4 @@ start %PYTHONW% voice\conversation_loop.py
 
 :: 4. Start Email Watcher silently
 start %PYTHONW% scripts\email_watcher.py
+

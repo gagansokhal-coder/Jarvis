@@ -4,30 +4,30 @@
       "ollama": {
         "baseUrl": "http://127.0.0.1:11434",
         "api": "ollama",
-        "maxTokens": 256,
+        "maxTokens": 100,
         "models": [
           {
             "id": "phi4-mini:latest",
-            "name": "Phi-4 Mini (local)",
-            "contextWindow": 4096,
-            "contextTokens": 4096,
-            "maxTokens": 256,
+            "name": "Phi-4 Mini (100% Free Local CPU)",
+            "contextWindow": 1024,
+            "contextTokens": 1024,
+            "maxTokens": 100,
             "params": {
-              "num_ctx": 4096,
-              "num_predict": 256,
+              "num_ctx": 1024,
+              "num_predict": 100,
               "num_thread": 8,
               "keep_alive": "60m"
             }
           },
           {
             "id": "qwen2.5:7b",
-            "name": "Qwen 2.5 7B (local)",
-            "contextWindow": 4096,
-            "contextTokens": 4096,
-            "maxTokens": 256,
+            "name": "Qwen 2.5 7B (100% Free Local CPU)",
+            "contextWindow": 1024,
+            "contextTokens": 1024,
+            "maxTokens": 100,
             "params": {
-              "num_ctx": 4096,
-              "num_predict": 256,
+              "num_ctx": 1024,
+              "num_predict": 100,
               "num_thread": 8,
               "keep_alive": "60m"
             }
@@ -43,15 +43,13 @@
     "defaults": {
       "workspace": "data/workspace",
       "contextInjection": "never",
-      "bootstrapMaxChars": 400,
-      "bootstrapTotalMaxChars": 1000,
+      "bootstrapMaxChars": 200,
+      "bootstrapTotalMaxChars": 500,
       "thinkingDefault": "off",
       "model": {
         "primary": "ollama/phi4-mini:latest",
         "fallbacks": [
-          "ollama/qwen2.5:7b",
-          "groq/openai/gpt-oss-120b",
-          "google/gemini-2.5-flash"
+          "ollama/qwen2.5:7b"
         ]
       }
     },

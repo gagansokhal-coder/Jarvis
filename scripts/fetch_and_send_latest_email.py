@@ -105,3 +105,4 @@ if __name__ == '__main__':
     if rec:
         print(f"Fetched latest: [{rec['account']}] {rec['subject']}")
         send_complete_mail_to_telegram(rec)
+

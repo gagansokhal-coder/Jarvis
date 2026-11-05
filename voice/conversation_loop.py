@@ -236,8 +236,10 @@ def query_ollama(prompt: str, context: list = None, session_id: str = None) -> t
         "system": system_prompt,
         "stream": False,
         "options": {
-            "temperature": 0.4,
-            "num_predict": 100
+            "temperature": 0.3,
+            "num_predict": 60,
+            "num_thread": 8,
+            "num_ctx": 1024
         }
     }
     if context:
@@ -374,7 +376,7 @@ def verify_identity() -> bool:
         print(f"Telegram alert error: {e}", file=sys.stderr)
     return False
 
-def wait_for_wake_up(oww_model=None, threshold=0.22):
+def wait_for_wake_up(oww_model=None, threshold=0.18):
     """Wait for acoustic wake phrase ('Hey Gagan') or keyboard press."""
     if oww_model:
         print("\n💤 [Standby] Listening for 'Hey Gagan' / 'Hey Gagan Rajput' (or press [ENTER] to talk)...")
@@ -406,8 +408,14 @@ def wait_for_wake_up(oww_model=None, threshold=0.22):
             except queue.Empty:
                 continue
 
-            int16_chunk = (data.flatten() * 32767).astype(np.int16)
-            buffer = np.concatenate((buffer, int16_chunk))
+            # Safe type handling & 2.2x software gain boost for quiet/earphone mics
+            if data.dtype == np.int16:
+                int16_chunk = data.flatten()
+            else:
+                int16_chunk = (data.flatten() * 32767.0).astype(np.int16)
+
+            boosted = np.clip(int16_chunk.astype(np.float32) * 2.2, -32768, 32767).astype(np.int16)
+            buffer = np.concatenate((buffer, boosted))
 
             while len(buffer) >= chunk_size:
                 frame = buffer[:chunk_size]
@@ -418,7 +426,7 @@ def wait_for_wake_up(oww_model=None, threshold=0.22):
 
                 # Real-time sensitivity diagnostic in voice log
                 if score >= 0.08:
-                    print(f"👂 Wake score detected: {score:.3f} (threshold: {threshold})")
+                    print(f"👂 Wake score detected: {score:.3f} (target >= {threshold})")
 
                 if score >= threshold:
                     print(f"\n⚡ Wake Word Detected: 'Hey Gagan' (Confidence: {score:.2f})")
@@ -612,7 +620,7 @@ def run_voice_loop():
     with sd.InputStream(device=best_mic_idx, samplerate=SAMPLE_RATE, channels=CHANNELS, callback=audio_callback):
         while True:
             try:
-                activated, direct_text = wait_for_wake_up(oww_model, threshold=0.22)
+                activated, direct_text = wait_for_wake_up(oww_model, threshold=0.18)
 
                 # Check lock status
                 locked = is_workstation_locked()
